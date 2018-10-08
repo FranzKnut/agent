@@ -1,6 +1,6 @@
 # Agent
 
-A plugin to visualize training of your reinforcement learning agent.
+A Tensorboard plugin to visualize training of your reinforcement learning agent.
 
 ## Example setup
 Clone the repo.
