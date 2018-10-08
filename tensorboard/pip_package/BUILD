@@ -22,6 +22,7 @@ sh_binary(
         "//tensorboard:version",  # Version module (read by setup.py)
         "//tensorboard/plugins/beholder",  # User-facing beholder API
         "//tensorboard/plugins/projector",  # User-facing projector API
+        "//tensorboard/plugins/agent",  # User-facing agent API
     ],
     tags = [
         "local",

@@ -52,6 +52,7 @@ tf_web_library(
     path = "/tf-tensorboard",
     visibility = ["//visibility:public"],
     deps = [
+        "//tensorboard/plugins/agent/tf_agent_dashboard",
         "//tensorboard/plugins/audio/tf_audio_dashboard",
         "//tensorboard/plugins/beholder/tf_beholder_dashboard",
         "//tensorboard/plugins/custom_scalar/tf_custom_scalar_dashboard",

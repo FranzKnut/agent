@@ -34,6 +34,7 @@ import os
 import tensorflow as tf
 
 from tensorboard.plugins import base_plugin
+from tensorboard.plugins.agent import agent_plugin
 from tensorboard.plugins.audio import audio_plugin
 from tensorboard.plugins.beholder import beholder_plugin
 from tensorboard.plugins.core import core_plugin
@@ -55,6 +56,7 @@ logger = logging.getLogger(__name__)
 _PLUGINS = [
     core_plugin.CorePluginLoader(),
     beholder_plugin.BeholderPlugin,
+    agent_plugin.AgentPlugin,
     scalars_plugin.ScalarsPlugin,
     custom_scalars_plugin.CustomScalarsPlugin,
     images_plugin.ImagesPlugin,
