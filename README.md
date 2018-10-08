@@ -2,8 +2,30 @@
 
 A Tensorboard plugin to visualize training of your reinforcement learning agent.
 
-## Example setup
-Clone the repo.
+## Setup
+Packages required (recommended version):
+
+  Python virtual environment (3.6)
+
+  [Bazel 0.17.2](https://docs.bazel.build/versions/master/install.html) build tool from Google
+
+  Tensorflow (1.11)
+  
+Then:
+
+    git clone https://github.com/andrewschreiber/agent.git
+    cd agent
+    
+    #Build takes ~7m on a 2015 Macbook
+    bazel build tensorboard:tensorboard
+    
+    #Use the custom tensorboard build by running
+    ./bazel-bin/tensorboard/tensorboard --logdir your/tb/logdirectory
+    
+    #Alias recommend for regular use
+    
+    
+
 
 ### Run Cartpole with DQN
     cd examples/baselines
