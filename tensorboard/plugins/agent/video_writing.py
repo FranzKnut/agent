@@ -109,6 +109,7 @@ class VideoOutput(object):
 
 class ArrayVideoOutput(VideoOutput):
   """Video output implemented by writing numpy array to disk"""
+  @classmethod
   def available(cls):
     return True
 
