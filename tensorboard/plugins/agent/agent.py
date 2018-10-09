@@ -41,7 +41,8 @@ class Agent(object):
         self.PLUGIN_LOGDIR,
         outputs=[
             video_writing.FFmpegVideoOutput,
-            video_writing.PNGVideoOutput])
+            video_writing.PNGVideoOutput,
+            video_writing.ArrayVideoOutput])
 
     self.frame_placeholder = tf.placeholder(tf.uint8, [None, None, None])
     self.summary_op = tf.summary.tensor_summary(TAG_NAME,
