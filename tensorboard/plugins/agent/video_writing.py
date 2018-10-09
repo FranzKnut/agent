@@ -115,7 +115,7 @@ class ArrayVideoOutput(VideoOutput):
 
   def __init__(self, directory, frame_shape):
     del frame_shape # unused
-    self.directory = directory + '/numpy-frames-{}'.format(time.time())
+    self.directory = directory + '/numpy-frame-{}'.format(time.time())
     self.frame_num = 0
     tf.gfile.MakeDirs(self.directory)
   
