@@ -24,8 +24,11 @@ limitations under the License.
 <link rel="import" href="../tf-dashboard-common/dashboard-style.html">
 <link rel="import" href="../tf-dashboard-common/tf-dashboard-layout.html">
 <link rel="import" href="../tf-tensorboard/registry.html">
+<link rel="import" href="../tf-dashboard-common/tf-multi-checkbox.html">
 <link rel="import" href="tf-agent-video.html">
 <link rel="import" href="tf-agent-info.html">
+<link rel="import" href="tf-agent-graph-card.html">
+
 
 <dom-module id="tf-agent-dashboard">
   <template>
@@ -44,101 +47,25 @@ limitations under the License.
           </div>
         </template>
         <div class="sidebar-section">
-          <h3>Values</h3>
-          <paper-radio-group id="valuesSelector" selected="{{_values}}">
-            <paper-radio-button name="trainable_variables" disabled="[[_controls_disabled]]">
-              <pre>tf.trainable_variables()</pre>
+          <h3>Video Mode</h3>
+          <paper-radio-group id="modeSelector" selected="{{_mode}}">
+            <paper-radio-button name="episode_frames" disabled="[[_controls_disabled]]">
+              Episode Frames
             </paper-radio-button>
-            <paper-radio-button id="option-arrays" name="arrays" disabled="[[_controls_disabled]]">
-              <pre>b.update(arrays=[NP_ARRAYS])</pre>
-            </paper-radio-button>
-            <paper-radio-button id="option-frames" name="frames" disabled="[[_controls_disabled]]">
-              <pre>b.update(frame=NP_ARRAY)</pre>
+            <paper-radio-button name="perturbation_saliency" disabled="[[_controls_disabled]]">
+              Perturbation Saliency
             </paper-radio-button>
           </paper-radio-group>
-
-          <template is="dom-if" if="[[_valuesNotFrame(_values)]]">
-            <paper-checkbox checked="{{_showAll}}" disabled="[[_controls_disabled]]">Show all data <i>(can be resource
-                intensive)</i></paper-checkbox>
-          </template>
         </div>
-
-        <template is="dom-if" if="[[_valuesNotFrame(_values)]]">
-
-          <div class="sidebar-section">
-            <h3>Mode</h3>
-            <paper-radio-group id="modeSelector" selected="{{_mode}}">
-              <paper-radio-button name="current" disabled="[[_controls_disabled]]">
-                current values
-              </paper-radio-button>
-              <paper-radio-button name="variance" disabled="[[_controls_disabled]]">
-                variance over train steps
-              </paper-radio-button>
-            </paper-radio-group>
-            <template is="dom-if" if="[[_varianceSelected(_mode)]]">
-              <h4>Variance timesteps: {{_windowSize}}</h4>
-              <paper-slider id="windowSlider" value="{{_windowSize}}" type="number" step="1" min="2" max="20" pin="true"
-                disabled="[[_controls_disabled]]">
-              </paper-slider>
-            </template>
-          </div>
-
-          <div class="sidebar-section">
-            <h3>Image scaling</h3>
-            <paper-radio-group id="scalingSelector" selected="{{_scaling}}">
-
-              <paper-radio-button id="option-layer" name="layer" disabled="[[_controls_disabled]]">
-                per section
-              </paper-radio-button>
-              <paper-tooltip for="option-layer" position="right">
-                Black is the lowest value in that section, white is that largest value in that section.
-              </paper-tooltip>
-
-              <paper-radio-button id="option-network" name="network" disabled="[[_controls_disabled]]">
-                all sections
-              </paper-radio-button>
-              <paper-tooltip for="option-network" position="right">
-                Black is the smallest value in all sections, white is the largest value in all sections.
-              </paper-tooltip>
-            </paper-radio-group>
-
-            <div id="colormap-selection">
-              <div id="colormap-selection-label">Colormap:</div>
-              <paper-dropdown-menu no-label-float selected-item-label="{{_colormap}}" disabled="[[_controls_disabled]]">
-                <paper-menu class="dropdown-content" selected="0">
-                  <paper-item>magma</paper-item>
-                  <paper-item>inferno</paper-item>
-                  <paper-item>plasma</paper-item>
-                  <paper-item>viridis</paper-item>
-                  <paper-item>grayscale</paper-item>
-                </paper-menu>
-              </paper-dropdown-menu>
-            </div>
-          </div>
-
-        </template>
-
         <div class="sidebar-section">
-          <h3>Updates per second: {{_FPS}}</h3>
-          <paper-slider id="FPSSlider" value="{{_FPS}}" type="number" step="1" min="0" max="30" pin="true" disabled="[[_controls_disabled]]">
-          </paper-slider>
+          <h3>Episodes</h3>
+          <tf-multi-checkbox id="multiCheckbox" names="[[episodes]]" selection-state="{{episodeSelectionState}}"
+            out-selected="{{selectedEpisode}}" regex="{{regexInput}}" checkbox coloring="[[coloring]]"></tf-multi-checkbox>
         </div>
-
         <div class="sidebar-section">
-          <div>
-            <paper-button class="x-button" id="record_button" on-tap="_toggleRecord" disabled="[[_controls_disabled]]">
-              [[_recordText]]
-            </paper-button>
-          </div>
         </div>
-
-        <div class="sidebar-section">
-          <p class="disclaimer">Note: Agent currently only works well on local file systems.</p>
-        </div>
-
       </div>
       <div class="center">
-
         <template is="dom-if" if="[[!_is_active]]">
           <div class="no-data-warning">
             <h3>No Agent data was found.</h3>
@@ -182,12 +109,36 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
         </template>
 
         <template is="dom-if" if="[[_is_active]]">
-          <tf-agent-video id="video" fps="[[_FPS]]"></tf-agent-video>
+          <div class="center-wrapper">
+            <div class="saliency">
+              <h3>Episode {{_EpisodeCount}} of {{_GameName}}</h1>
+                <div class="video-player">
 
-          <template is="dom-if" if="[[_valuesNotFrame(_values)]]">
-            <tf-agent-info id="info" fps="[[_FPS]]">
-            </tf-agent-info>
-          </template>
+                </div>
+                <div class="saliency-controls-wrapper">
+                  <paper-button class="x-button" id="saliency_play_button" on-tap="_togglePlay" disabled="[[_controls_disabled]]">
+                    [[_playText]]
+                  </paper-button>
+                  <paper-slider id="saliency_slider" min="0" max="2500" value="100" editable></paper-slider>
+                </div>
+            </div>
+            <div class="graph-wrapper">
+              <div class="top-graph">
+                <h3>Expected Reward</h1>
+                  <template is="dom-repeat" items="[[page.items]]">
+                    <tf-agent-graph-card active="[[page.active]]" data-to-load="[[item.series]]" ignore-y-outliers="[[_ignoreYOutliers]]"
+                      multi-experiments="[[_getMultiExperiments(dataSelection)]]" request-manager="[[_requestManager]]"
+                      show-download-links="[[_showDownloadLinks]]" smoothing-enabled="[[_smoothingEnabled]]"
+                      smoothing-weight="[[_smoothingWeight]]" tag-metadata="[[_tagMetadata(category, _runToTagInfo, item)]]"
+                      tag="[[item.tag]]" tooltip-sorting-method="[[_tooltipSortingMethod]]" x-type="[[_xType]]"></tf-agent-graph-card>
+                    <p> </p>
+              </div>
+              <div class="bottom-graph">
+                <h3>Cumulative Reward</h1>
+                  <p></p>
+              </div>
+            </div>
+          </div>
         </template>
 
       </div>
@@ -195,7 +146,6 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
     <style include="dashboard-style"></style>
     <style>
       .center {
-        height: 100%;
         display: flex;
         padding: 0;
       }
@@ -203,6 +153,73 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
       .no-data-warning {
         max-width: 540px;
         margin: 80px auto 0;
+      }
+
+      .saliency {
+        padding: 10px;
+        color: #757575;
+        border-radius: 5px;
+        background-color: #fff;
+        box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2);
+      }
+
+      .video-player {
+        height: 75%;
+        margin: 5px;
+        background-color: gold;
+        border-radius: 3px;
+      }
+
+      .saliency-controls-wrapper {
+        display: grid;
+        grid-template-columns: 15% 85%;
+        grid-row-gap: 15px;
+        vertical-align: middle;
+        height: 15px;
+        margin-top: 15px;
+        margin-bottom: 10px
+      }
+
+      paper-slider#saliency_slider {
+        width: 95%;
+        margin-left: 15px;
+      }
+
+      paper-button#saliency_play_button {
+        background: #f57c00;
+        color: white;
+        vertical-align: middle;
+        max-width: 80%;
+        max-height: 80%;
+      }
+
+      .top-graph {
+        padding: 10px;
+        color: #757575;
+        border-radius: 5px;
+        background-color: #fff;
+        box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2);
+      }
+
+      .bottom-graph {
+        margin-top: 10px;
+        padding: 10px;
+        color: #757575;
+        border-radius: 5px;
+        background-color: #fff;
+        box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2);
+      }
+
+      .center-wrapper {
+        width: 100%;
+        display: grid;
+        grid-auto-flow: row dense;
+        grid-template-columns: 50% 50%;
+        grid-gap: 10px;
+        margin-left: 10px;
+        margin-right: 20px;
+        margin-bottom: 10px;
+        margin-top: 10px;
       }
 
       paper-checkbox {
@@ -239,8 +256,18 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
         --paper-slider-markers-color: var(--tb-orange-strong);
         --paper-slider-pin-color: var(--tb-orange-strong);
         --paper-slider-pin-start-color: var(--tb-orange-strong);
-        flex-grow: 2;
+
+        --paper-slider-input: {
+          width: 100px;
+        }
       }
+
+
+      /* paper-button#saliency_play_button.is-playing {
+        background: #D32F2F;
+        color: white;
+        vertical-align: middle;
+      } */
 
       pre {
         display: inline;
@@ -345,18 +372,24 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
             value: 10,
             observer: '_configChanged',
           },
-
+          _playText: {
+            type: String,
+            value: 'play'
+          },
           _recordText: {
             type: String,
             value: 'start recording'
           },
-
+          _isPlaying: {
+            type: Boolean,
+            value: false,
+            observer: '_configChanged',
+          },
           _isRecording: {
             type: Boolean,
             value: false,
             observer: '_configChanged',
           },
-
           _showAll: {
             type: Boolean,
             value: false,
@@ -403,6 +436,7 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
             this._scaling,
             this._windowSize,
             this._FPS,
+            this._isPlaying,
             this._isRecording,
             this._showAll,
             this._colormap
@@ -422,11 +456,22 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
             window_size: this._windowSize,
             FPS: this._FPS,
             is_recording: this._isRecording,
+            is_playing: this._isPlaying,
             show_all: this._showAll,
             colormap: this._colormap
           }
 
           this._requestManager.request(url, postData)
+        },
+        _togglePlay() {
+          if (this._playText == 'play') {
+            this.set('_playText', 'pause')
+            this.set('_isPlaying', true)
+          } else {
+            this.set('_playText', 'play')
+            this.set('_isPlaying', false)
+          }
+          // this.$.saliency_play_button.classList.toggle('is-playing')
         },
 
         _toggleRecord() {
@@ -440,7 +485,6 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
 
           this.$.record_button.classList.toggle('is-recording')
         },
-
         ready() {
           this.reload()
         },

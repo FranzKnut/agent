@@ -107,6 +107,25 @@ class VideoOutput(object):
   def close(self):
     raise NotImplementedError()
 
+class ArrayVideoOutput(VideoOutput):
+  """Video output implemented by writing numpy array to disk"""
+  @classmethod
+  def available(cls):
+    return True
+
+  def __init__(self, directory, frame_shape):
+    del frame_shape # unused
+    self.directory = directory + '/numpy-frame-{}'.format(time.time())
+    self.frame_num = 0
+    tf.gfile.MakeDirs(self.directory)
+  
+  def emit_frame(self, np_array):
+    filename = self.directory + '/{:05}.png'.format(self.frame_num)
+    np.savetxt(filename, np_array)
+    self.frame_num += 1
+
+  def close(self):
+    pass
 
 class PNGVideoOutput(VideoOutput):
   """Video output implemented by writing individual PNGs to disk."""
