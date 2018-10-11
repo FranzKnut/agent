@@ -24,11 +24,11 @@ SECTION_INFO_FILENAME = 'section-info.pkl'
 SUMMARY_COLLECTION_KEY_NAME = 'summaries_agent'
 
 DEFAULT_CONFIG = {
-    'values': 'trainable_variables',
+    'values': 'frames',
     'mode': 'variance',
     'scaling': 'layer',
     'window_size': 15,
-    'FPS': 10,
+    'FPS': 60,
     'is_recording': False,
     'show_all': False,
     'colormap': 'magma'

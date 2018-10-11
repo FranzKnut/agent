@@ -172,6 +172,7 @@ class BeholderPlugin(base_plugin.TBPlugin):
 
   @wrappers.Request.application
   def _serve_beholder_frame(self, request): # pylint: disable=unused-argument
+    print("Serve beholder frame")
     # Thanks to Miguel Grinberg for this technique:
     # https://blog.miguelgrinberg.com/post/video-streaming-with-flask
     mimetype = 'multipart/x-mixed-replace; boundary=frame'

@@ -48,8 +48,8 @@ limitations under the License.
         </template>
         <div class="sidebar-section">
           <h3>Video Mode</h3>
-          <paper-radio-group id="modeSelector" selected="{{_mode}}">
-            <paper-radio-button name="episode_frames" disabled="[[_controls_disabled]]">
+          <paper-radio-group id="modeSelector" selected="{{_values}}">
+            <paper-radio-button name="frames" disabled="[[_controls_disabled]]">
               Episode Frames
             </paper-radio-button>
             <paper-radio-button name="perturbation_saliency" disabled="[[_controls_disabled]]">
@@ -111,16 +111,17 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
         <template is="dom-if" if="[[_is_active]]">
           <div class="center-wrapper">
             <div class="saliency">
-              <h3>Episode {{_EpisodeCount}} of {{_GameName}}</h1>
-                <div class="video-player">
+              <h3>Episode Frames</h3>
+              <div class="video-player">
+                <tf-agent-video id="video" fps="[[_FPS]]"></tf-agent-video>
 
-                </div>
-                <div class="saliency-controls-wrapper">
-                  <paper-button class="x-button" id="saliency_play_button" on-tap="_togglePlay" disabled="[[_controls_disabled]]">
-                    [[_playText]]
-                  </paper-button>
-                  <paper-slider id="saliency_slider" min="0" max="2500" value="100" editable></paper-slider>
-                </div>
+              </div>
+              <div class="saliency-controls-wrapper">
+                <paper-button class="x-button" id="saliency_play_button" on-tap="_togglePlay" disabled="[[_controls_disabled]]">
+                  [[_playText]]
+                </paper-button>
+                <paper-slider id="saliency_slider" min="0" max="2500" value="100" editable></paper-slider>
+              </div>
             </div>
             <div class="graph-wrapper">
               <div class="top-graph">
@@ -155,19 +156,36 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
         margin: 80px auto 0;
       }
 
+      .center-wrapper {
+        width: 100%;
+        display: grid;
+        grid-auto-flow: row;
+        grid-template-columns: 50% 50%;
+        grid-gap: 10px;
+        margin-left: 10px;
+        margin-right: 20px;
+        margin-bottom: 10px;
+        margin-top: 10px;
+        height: auto;
+      }
+
       .saliency {
         padding: 10px;
         color: #757575;
+        line-height: 0;
+        height: auto;
         border-radius: 5px;
         background-color: #fff;
         box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2);
       }
 
       .video-player {
-        height: 75%;
+        max-height: 75%;
+        max-width: 100%;
         margin: 5px;
-        background-color: gold;
         border-radius: 3px;
+        overflow: hidden;
+        box-shadow: 0 2px 2px 0 #f57c00, 0 1px 5px 0 #f57c00, 0 3px 1px -2px #f57c00;
       }
 
       .saliency-controls-wrapper {
@@ -193,6 +211,10 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
         max-height: 80%;
       }
 
+      .graph-wrapper {
+        height: 100%;
+      }
+
       .top-graph {
         padding: 10px;
         color: #757575;
@@ -210,17 +232,6 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
         box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2);
       }
 
-      .center-wrapper {
-        width: 100%;
-        display: grid;
-        grid-auto-flow: row dense;
-        grid-template-columns: 50% 50%;
-        grid-gap: 10px;
-        margin-left: 10px;
-        margin-right: 20px;
-        margin-bottom: 10px;
-        margin-top: 10px;
-      }
 
       paper-checkbox {
         display: block;
@@ -327,6 +338,7 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
     (function () {
 
       const PLUGIN_NAME = 'agent'
+      console.log("Init polymer dashboard")
 
       Polymer({
         is: 'tf-agent-dashboard',
@@ -340,7 +352,7 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
 
           _values: {
             type: String,
-            value: 'trainable_variables',
+            value: 'frames',
             observer: '_configChanged',
           },
 
@@ -487,6 +499,7 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
         },
         ready() {
           this.reload()
+          console.log("Loaded dashboard")
         },
 
         reload() {
