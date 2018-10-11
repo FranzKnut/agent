@@ -7,7 +7,7 @@ Packages required (recommended version):
 
   Python virtual environment (3.6)
 
-  [Bazel 0.17.2](https://docs.bazel.build/versions/master/install.html) build tool from Google
+  [Bazel](https://docs.bazel.build/versions/master/install.html) build tool from Google. Install guide in link. (0.17.2)
 
   Tensorflow (1.11)
   
