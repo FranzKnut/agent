@@ -36,7 +36,7 @@ class Agent(object):
   def __init__(self, logdir):
     self.PLUGIN_LOGDIR = logdir + '/plugins/' + PLUGIN_NAME
 
-    self.is_recording = False
+    self.is_recording = True
     self.video_writer = video_writing.VideoWriter(
         self.PLUGIN_LOGDIR,
         outputs=[
@@ -132,10 +132,19 @@ class Agent(object):
     return final_image
 
 
-  def _update_recording(self, frame, config):
+  def _update_recording(self, frame, config, done):
     '''Adds a frame to the current video output.'''
     # pylint: disable=redefined-variable-type
     should_record = config['is_recording']
+
+
+    print("Update recording", self.is_recording, done)
+    if self.is_recording and done:
+      print("Finished recording")
+      self.is_recording = False
+      self.video_writer.finish()
+      tf.logging.info('Finished recording episode')
+      return
 
     if should_record:
       if not self.is_recording:
@@ -152,7 +161,7 @@ class Agent(object):
 
   # TODO: blanket try and except for production? I don't someone's script to die
   #       after weeks of running because of a visualization.
-  def update(self, session, arrays=None, frame=None):
+  def update(self, session, arrays=None, frame=None, done=False):
     '''Creates a frame and writes it to disk.
 
     Args:
@@ -169,7 +178,7 @@ class Agent(object):
       self.visualizer.update(new_config)
       self.last_update_time = time.time()
       final_image = self._update_frame(session, arrays, frame, new_config)
-      self._update_recording(final_image, new_config)
+      self._update_recording(final_image, new_config, done)
 
 
   ##############################################################################

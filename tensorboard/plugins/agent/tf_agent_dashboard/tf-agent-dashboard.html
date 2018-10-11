@@ -399,7 +399,7 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
           },
           _isRecording: {
             type: Boolean,
-            value: false,
+            value: true,
             observer: '_configChanged',
           },
           _showAll: {
@@ -486,17 +486,17 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
           // this.$.saliency_play_button.classList.toggle('is-playing')
         },
 
-        _toggleRecord() {
-          if (this._recordText == 'start recording') {
-            this.set('_recordText', 'stop recording')
-            this.set('_isRecording', true)
-          } else {
-            this.set('_recordText', 'start recording')
-            this.set('_isRecording', false)
-          }
+        // _toggleRecord() {
+        //   if (this._recordText == 'start recording') {
+        //     this.set('_recordText', 'stop recording')
+        //     this.set('_isRecording', true)
+        //   } else {
+        //     this.set('_recordText', 'start recording')
+        //     this.set('_isRecording', false)
+        //   }
 
-          this.$.record_button.classList.toggle('is-recording')
-        },
+        //   this.$.record_button.classList.toggle('is-recording')
+        // },
         ready() {
           this.reload()
           console.log("Loaded dashboard")

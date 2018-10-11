@@ -29,12 +29,12 @@ DEFAULT_CONFIG = {
     'scaling': 'layer',
     'window_size': 15,
     'FPS': 60,
-    'is_recording': False,
+    'is_recording': True,
     'show_all': False,
     'colormap': 'magma'
 }
 
 SECTION_HEIGHT = 128
-IMAGE_WIDTH = 512 + 256
+IMAGE_WIDTH = 300
 
 TB_WHITE = 245
