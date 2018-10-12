@@ -54,6 +54,7 @@ class Agent(object):
     self.rewards = []
     self.actions = []
     self.episode_count = 0
+    self.start_time = round(time.time())
 
     if not tf.gfile.Exists(self.PLUGIN_LOGDIR + '/config.pkl'):
       tf.gfile.MakeDirs(self.PLUGIN_LOGDIR)
@@ -185,9 +186,8 @@ class Agent(object):
   def _start_episode(self, env_name, tag):
       # Directory
       d=self.PLUGIN_LOGDIR
-      t = round(time.time())
       tagString = '' if tag == ''  else  '_{}'.format(tag)
-      self.LOG_DIR = '{}/{}{}_t{}_ep{}'.format(d, env_name, tag, t, self.episode_count)
+      self.LOG_DIR = '{}/{}{}_t{}_ep{}'.format(d, env_name, tag, self.start_time, self.episode_count)
       print(self.LOG_DIR)
 
       self.video_writer = video_writing.VideoWriter(

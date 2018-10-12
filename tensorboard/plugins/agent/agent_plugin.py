@@ -129,8 +129,7 @@ class AgentPlugin(base_plugin.TBPlugin):
     def _serve_episodes(self,request):
         d=self.PLUGIN_LOGDIR
         folders = list(filter(lambda x: os.path.isdir(os.path.join(d, x)), os.listdir(d)))
-        print("serving episodes", folders)
-        return http_util.Respond(request, {"folders":folders}, 'application/json')
+        return http_util.Respond(request, {"folders": sorted(folders)}, 'application/json')
 
     @wrappers.Request.application
     def _serve_change_config(self, request):
