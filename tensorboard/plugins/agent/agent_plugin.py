@@ -128,50 +128,6 @@ class AgentPlugin(base_plugin.TBPlugin):
         return http_util.Respond(request, {"base64_images":base64_images}, 'application/json')
 
     @wrappers.Request.application
-    def _serve_image_zip(self, request):
-        print("Serving zip")
-        selected_episode = request.form["selected_episode"]
-        view_mode = request.form["view_mode"]
-        directory = '{}/{}/{}'.format(self.PLUGIN_LOGDIR, selected_episode, view_mode)
-        zip_dir = "{}/{}/{}_zipped.zip".format(self.PLUGIN_LOGDIR, selected_episode, view_mode)
-
-        arc = shutil.make_archive(zip_dir, 'zip', directory)
-        print("made archive at dir", zip_dir)
-
-        with open(zip_dir, "rb") as f:
-            bytes = f.read()
-            encoded = base64.b64encode(bytes)
-
-        return http_util.Respond(request, {"bytes":encoded}, "application/json")
-
-    @wrappers.Request.application
-    def _serve_image(self,request):
-        selected_frame = int(request.form["selected_frame"])
-        selected_episode = request.form["selected_episode"]
-        view_mode = request.form["view_mode"]
-        directory = '{}/{}/{}'.format(self.PLUGIN_LOGDIR, selected_episode, view_mode)
-
-        if selected_episode != self.current_episode:
-            self.current_episode = selected_episode
-            self.current_paths = []
-            for folder, subs, files in os.walk(directory):
-                for filename in files:
-                    self.current_paths.append(os.path.abspath(os.path.join(folder, filename)))
-
-        filepath = self.current_paths[selected_frame]
-        print(filepath)
-        with open(filepath, "rb") as imageFile:
-            f = imageFile.read()
-            b = bytearray(f)
-        
-        mimetype = 'multipart/x-mixed-replace; boundary=frame'
-        return wrappers.Response(response=self._frame_generator(),
-                             status=200,
-                             mimetype=mimetype)
-
-        return http_util.Respond(request, {'image_bytes', b}, 'application/json')
-
-    @wrappers.Request.application
     def _serve_change_config(self, request):
         print("Serve change config")
         config = {}
