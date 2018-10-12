@@ -19,6 +19,7 @@ from __future__ import print_function
 import threading
 import time
 
+import os 
 import numpy as np
 import tensorflow as tf
 from google.protobuf import message
@@ -31,6 +32,7 @@ from tensorboard.plugins import base_plugin
 from tensorboard.plugins.agent import file_system_tools
 from tensorboard.plugins.agent import im_util
 from tensorboard.plugins.agent import shared_config
+
 
 DEFAULT_INFO = [{
     'name': 'Waiting for data...',
@@ -63,6 +65,7 @@ class AgentPlugin(base_plugin.TBPlugin):
             '/section-info': self._serve_section_info,
             '/ping': self._serve_ping,
             '/is-active': self._serve_is_active,
+            '/episodes':self._serve_episodes,
         }
 
     def is_active(self):
@@ -121,6 +124,13 @@ class AgentPlugin(base_plugin.TBPlugin):
                     self.most_recent_frame = im_util.get_image_relative_to_script(
                         'no-data.png')
                 return self.most_recent_frame
+
+    @wrappers.Request.application
+    def _serve_episodes(self,request):
+        d=self.PLUGIN_LOGDIR
+        folders = list(filter(lambda x: os.path.isdir(os.path.join(d, x)), os.listdir(d)))
+        print("serving episodes", folders)
+        return http_util.Respond(request, {"folders":folders}, 'application/json')
 
     @wrappers.Request.application
     def _serve_change_config(self, request):

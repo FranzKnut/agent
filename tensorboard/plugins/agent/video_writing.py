@@ -136,7 +136,7 @@ class PNGVideoOutput(VideoOutput):
 
   def __init__(self, directory, frame_shape):
     del frame_shape  # unused
-    self.directory = directory + '/video-frames-{}'.format(time.time())
+    self.directory = directory
     self.frame_num = 0
     tf.gfile.MakeDirs(self.directory)
 

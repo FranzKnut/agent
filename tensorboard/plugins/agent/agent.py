@@ -35,15 +35,11 @@ class Agent(object):
 
   def __init__(self, logdir):
     self.PLUGIN_LOGDIR = logdir + '/plugins/' + PLUGIN_NAME
+    self.LOG_DIR = None
 
     self.is_recording = True
-    self.video_writer = video_writing.VideoWriter(
-        self.PLUGIN_LOGDIR,
-        outputs=[
-            video_writing.FFmpegVideoOutput,
-            video_writing.PNGVideoOutput,
-            video_writing.ArrayVideoOutput])
 
+    self.video_writer = None
     self.frame_placeholder = tf.placeholder(tf.uint8, [None, None, None])
     self.summary_op = tf.summary.tensor_summary(TAG_NAME,
                                                 self.frame_placeholder,
@@ -55,6 +51,9 @@ class Agent(object):
     self.last_update_time = time.time()
     self.config_last_modified_time = -1
     self.previous_config = dict(DEFAULT_CONFIG)
+    self.rewards = []
+    self.actions = []
+    self.episode_count = 0
 
     if not tf.gfile.Exists(self.PLUGIN_LOGDIR + '/config.pkl'):
       tf.gfile.MakeDirs(self.PLUGIN_LOGDIR)
@@ -88,13 +87,15 @@ class Agent(object):
     write_file(summary, path)
 
 
-  def _get_final_image(self, session, config, arrays=None, frame=None):
+  def _get_final_image(self, session, config, frame=None, arrays=None):
     if config['values'] == 'frames':
       if frame is None:
         final_image = im_util.get_image_relative_to_script('frame-missing.png')
       else:
         frame = frame() if callable(frame) else frame
         final_image = im_util.scale_image_for_display(frame)
+    
+    #TODO: Add elif for saliency
 
     elif config['values'] == 'arrays':
       if arrays is None:
@@ -124,27 +125,18 @@ class Agent(object):
       return time.time() >= earliest_time
 
 
-  def _update_frame(self, session, arrays, frame, config):
-    final_image = self._get_final_image(session, config, arrays, frame)
-    self._write_summary(session, final_image)
+  def _update_frame(self, session, frame, config):
+    final_image = self._get_final_image(session, config, frame)
+    #self._write_summary(session, final_image)
     self.last_image_shape = final_image.shape
 
     return final_image
 
 
-  def _update_recording(self, frame, config, done):
+  def _update_recording(self, frame, config):
     '''Adds a frame to the current video output.'''
     # pylint: disable=redefined-variable-type
     should_record = config['is_recording']
-
-
-    print("Update recording", self.is_recording, done)
-    if self.is_recording and done:
-      print("Finished recording")
-      self.is_recording = False
-      self.video_writer.finish()
-      tf.logging.info('Finished recording episode')
-      return
 
     if should_record:
       if not self.is_recording:
@@ -161,7 +153,8 @@ class Agent(object):
 
   # TODO: blanket try and except for production? I don't someone's script to die
   #       after weeks of running because of a visualization.
-  def update(self, session, arrays=None, frame=None, done=False):
+  def update(self, session, env_name="env", tag="", frame=None, action=-1, reward=0.0, done=False):
+
     '''Creates a frame and writes it to disk.
 
     Args:
@@ -172,14 +165,49 @@ class Agent(object):
              frame can also be a function, which only is evaluated when the
              "frame" option is selected by the client.
     '''
+    if self.video_writer is None:
+      self._start_episode(env_name.strip(), tag.strip())
+
     new_config = self._get_config()
 
     if self._enough_time_has_passed(self.previous_config['FPS']):
       self.visualizer.update(new_config)
       self.last_update_time = time.time()
-      final_image = self._update_frame(session, arrays, frame, new_config)
-      self._update_recording(final_image, new_config, done)
+      print(frame)
+      final_image = self._update_frame(session, frame, new_config)
+      self.actions.append(action)
+      self.rewards.append(reward)
+      self._update_recording(final_image, new_config)
 
+    if done:
+      self._finish_episode()
+
+  def _start_episode(self, env_name, tag):
+      # Directory
+      d=self.PLUGIN_LOGDIR
+      t = round(time.time())
+      tagString = '' if tag == ''  else  '_{}'.format(tag)
+      self.LOG_DIR = '{}/{}{}_t{}_ep{}'.format(d, env_name, tag, t, self.episode_count)
+      print(self.LOG_DIR)
+
+      self.video_writer = video_writing.VideoWriter(
+        self.LOG_DIR,
+        outputs=[video_writing.PNGVideoOutput])
+
+
+  def _finish_episode(self):
+        print("Finished episode",self.episode_count)
+        self.is_recording = False
+        if self.video_writer is not None:
+          self.video_writer.finish()
+          self.video_writer = None
+
+          #TODO: Write rewards and actions to json
+
+        self.rewards = []
+        self.actions = []
+        tf.logging.info('Finished recording episode')
+        self.episode_count += 1
 
   ##############################################################################
 

@@ -43,6 +43,7 @@ limitations under the License.
       const BLANK = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
       const FEED_ROUTE = tf_backend.getRouter().pluginRoute('agent', '/agent-frame');
       const PING_ROUTE = tf_backend.getRouter().pluginRoute('agent', '/ping');
+      const EPISODE_ROUTE = tf_backend.getRouter().pluginRoute('agent', '/episodes')
 
       Polymer({
         is: "tf-agent-video",
@@ -76,7 +77,7 @@ limitations under the License.
 
         attached() {
           this.set('_imageURL', FEED_ROUTE);
-          this._ping();
+          // this._ping();
         },
 
         detached() {
@@ -129,7 +130,7 @@ limitations under the License.
           if (newValue == 0) {
             this._clear();
           } else if (oldValue == 0) {
-            this._ping();
+            // this._ping();
           }
         },
       });
