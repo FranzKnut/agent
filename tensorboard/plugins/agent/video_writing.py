@@ -141,7 +141,7 @@ class PNGVideoOutput(VideoOutput):
     tf.gfile.MakeDirs(self.directory)
 
   def emit_frame(self, np_array):
-    filename = self.directory + '/{:05}.png'.format(self.frame_num)
+    filename = self.directory + '/{:08}.png'.format(self.frame_num)
     im_util.write_image(np_array.astype(np.uint8), filename)
     self.frame_num += 1
 
