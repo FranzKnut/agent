@@ -7,7 +7,7 @@ Packages required (recommended version):
 
   Python virtual environment (3.6)
 
-  [Bazel 0.17.2](https://docs.bazel.build/versions/master/install.html) build tool from Google
+  [Bazel](https://docs.bazel.build/versions/master/install.html) build tool from Google. Install guide in link. (0.17.2)
 
   Tensorflow (1.11)
   
@@ -16,14 +16,14 @@ Then:
     git clone https://github.com/andrewschreiber/agent.git
     cd agent
     
+    # Install API layer in your Python virtual environment
+    pip install .
+
     #Build takes ~7m on a 2015 Macbook
     bazel build tensorboard:tensorboard
     
     #Use the custom tensorboard build by running
-    ./bazel-bin/tensorboard/tensorboard --logdir your/tb/logdirectory
-    
-    #Alias recommend for regular use
-    
+    ./bazel-bin/tensorboard/tensorboard --logdir tb/logdirectory/logs
     
 
 

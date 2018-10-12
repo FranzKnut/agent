@@ -111,7 +111,7 @@ class ArrayVideoOutput(VideoOutput):
   """Video output implemented by writing numpy array to disk"""
   @classmethod
   def available(cls):
-    return True
+    return False
 
   def __init__(self, directory, frame_shape):
     del frame_shape # unused
@@ -136,7 +136,7 @@ class PNGVideoOutput(VideoOutput):
 
   def __init__(self, directory, frame_shape):
     del frame_shape  # unused
-    self.directory = directory + '/video-frames-{}'.format(time.time())
+    self.directory = directory
     self.frame_num = 0
     tf.gfile.MakeDirs(self.directory)
 
@@ -154,6 +154,7 @@ class FFmpegVideoOutput(VideoOutput):
 
   @classmethod
   def available(cls):
+    return False
     # Silently check if ffmpeg is available.
     try:
       with open(os.devnull, 'wb') as devnull:

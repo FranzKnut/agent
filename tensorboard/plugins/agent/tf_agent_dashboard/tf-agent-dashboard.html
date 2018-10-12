@@ -28,6 +28,7 @@ limitations under the License.
 <link rel="import" href="tf-agent-video.html">
 <link rel="import" href="tf-agent-info.html">
 <link rel="import" href="tf-agent-graph-card.html">
+<link rel="import" href="../paper-checkbox/paper-checkbox.html">
 
 
 <dom-module id="tf-agent-dashboard">
@@ -48,8 +49,8 @@ limitations under the License.
         </template>
         <div class="sidebar-section">
           <h3>Video Mode</h3>
-          <paper-radio-group id="modeSelector" selected="{{_mode}}">
-            <paper-radio-button name="episode_frames" disabled="[[_controls_disabled]]">
+          <paper-radio-group id="modeSelector" selected="{{_values}}">
+            <paper-radio-button name="frames" disabled="[[_controls_disabled]]">
               Episode Frames
             </paper-radio-button>
             <paper-radio-button name="perturbation_saliency" disabled="[[_controls_disabled]]">
@@ -58,9 +59,15 @@ limitations under the License.
           </paper-radio-group>
         </div>
         <div class="sidebar-section">
+          <h3>Record after every {{_record_freq}} episodes</h3>
+          <paper-slider id="RecordSlider" value="{{_record_freq}}" type="number" step="1" min="0" max="200" pin="true"
+            disabled="[[_controls_disabled]]">
+          </paper-slider>
+        </div>
+        <div class="sidebar-section">
           <h3>Episodes</h3>
-          <tf-multi-checkbox id="multiCheckbox" names="[[episodes]]" selection-state="{{episodeSelectionState}}"
-            out-selected="{{selectedEpisode}}" regex="{{regexInput}}" checkbox coloring="[[coloring]]"></tf-multi-checkbox>
+          <tf-multi-checkbox id="multiCheckbox" names="[[episodes]]">
+          </tf-multi-checkbox>
         </div>
         <div class="sidebar-section">
         </div>
@@ -111,31 +118,32 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
         <template is="dom-if" if="[[_is_active]]">
           <div class="center-wrapper">
             <div class="saliency">
-              <h3>Episode {{_EpisodeCount}} of {{_GameName}}</h1>
-                <div class="video-player">
+              <h3>Episode Frames</h3>
+              <div class="video-player">
+                <tf-agent-video id="video" fps="[[_FPS]]"></tf-agent-video>
 
-                </div>
-                <div class="saliency-controls-wrapper">
-                  <paper-button class="x-button" id="saliency_play_button" on-tap="_togglePlay" disabled="[[_controls_disabled]]">
-                    [[_playText]]
-                  </paper-button>
-                  <paper-slider id="saliency_slider" min="0" max="2500" value="100" editable></paper-slider>
-                </div>
+              </div>
+              <div class="saliency-controls-wrapper">
+                <paper-button class="x-button" id="saliency_play_button" on-tap="_togglePlay" disabled="[[_controls_disabled]]">
+                  [[_playText]]
+                </paper-button>
+                <paper-slider id="saliency_slider" min="0" max="2500" value="100" editable></paper-slider>
+              </div>
             </div>
             <div class="graph-wrapper">
               <div class="top-graph">
-                <h3>Expected Reward</h1>
-                  <template is="dom-repeat" items="[[page.items]]">
-                    <tf-agent-graph-card active="[[page.active]]" data-to-load="[[item.series]]" ignore-y-outliers="[[_ignoreYOutliers]]"
-                      multi-experiments="[[_getMultiExperiments(dataSelection)]]" request-manager="[[_requestManager]]"
-                      show-download-links="[[_showDownloadLinks]]" smoothing-enabled="[[_smoothingEnabled]]"
-                      smoothing-weight="[[_smoothingWeight]]" tag-metadata="[[_tagMetadata(category, _runToTagInfo, item)]]"
-                      tag="[[item.tag]]" tooltip-sorting-method="[[_tooltipSortingMethod]]" x-type="[[_xType]]"></tf-agent-graph-card>
-                    <p> </p>
+                <h3>Expected Reward</h3>
+                <template is="dom-repeat" items="[[page.items]]">
+                  <tf-agent-graph-card active="[[page.active]]" data-to-load="[[item.series]]" ignore-y-outliers="[[_ignoreYOutliers]]"
+                    multi-experiments="[[_getMultiExperiments(dataSelection)]]" request-manager="[[_requestManager]]"
+                    show-download-links="[[_showDownloadLinks]]" smoothing-enabled="[[_smoothingEnabled]]"
+                    smoothing-weight="[[_smoothingWeight]]" tag-metadata="[[_tagMetadata(category, _runToTagInfo, item)]]"
+                    tag="[[item.tag]]" tooltip-sorting-method="[[_tooltipSortingMethod]]" x-type="[[_xType]]"></tf-agent-graph-card>
+                  <p> </p>
               </div>
               <div class="bottom-graph">
-                <h3>Cumulative Reward</h1>
-                  <p></p>
+                <h3>Cumulative Reward</h3>
+                <p></p>
               </div>
             </div>
           </div>
@@ -155,19 +163,42 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
         margin: 80px auto 0;
       }
 
+      .center-wrapper {
+        width: 100%;
+        display: grid;
+        grid-auto-flow: row;
+        grid-template-columns: 50% 50%;
+        grid-gap: 10px;
+        margin-left: 10px;
+        margin-right: 20px;
+        margin-bottom: 10px;
+        margin-top: 10px;
+        height: auto;
+      }
+
+      tf-multi-checkbox {
+        display: flex;
+        flex-grow: 1;
+        flex-shrink: 1;
+      }
+
       .saliency {
         padding: 10px;
         color: #757575;
+        line-height: 0;
+        height: auto;
         border-radius: 5px;
         background-color: #fff;
         box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2);
       }
 
       .video-player {
-        height: 75%;
+        max-height: 75%;
+        max-width: 100%;
         margin: 5px;
-        background-color: gold;
         border-radius: 3px;
+        overflow: hidden;
+        box-shadow: 0 2px 2px 0 #f57c00, 0 1px 5px 0 #f57c00, 0 3px 1px -2px #f57c00;
       }
 
       .saliency-controls-wrapper {
@@ -193,6 +224,10 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
         max-height: 80%;
       }
 
+      .graph-wrapper {
+        height: 100%;
+      }
+
       .top-graph {
         padding: 10px;
         color: #757575;
@@ -210,17 +245,6 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
         box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2);
       }
 
-      .center-wrapper {
-        width: 100%;
-        display: grid;
-        grid-auto-flow: row dense;
-        grid-template-columns: 50% 50%;
-        grid-gap: 10px;
-        margin-left: 10px;
-        margin-right: 20px;
-        margin-bottom: 10px;
-        margin-top: 10px;
-      }
 
       paper-checkbox {
         display: block;
@@ -326,13 +350,29 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
     "use strict";
     (function () {
 
+      console.log("Init polymer dashboard")
       const PLUGIN_NAME = 'agent'
+      const PING_ROUTE = tf_backend.getRouter().pluginRoute(PLUGIN_NAME, '/ping');
+      const EPISODE_ROUTE = tf_backend.getRouter().pluginRoute(PLUGIN_NAME, '/episodes')
 
       Polymer({
         is: 'tf-agent-dashboard',
 
         properties: {
 
+          pingSleep: {
+            type: Number,
+            value: 5000,
+          },
+          xhrTimeout: {
+            type: Number,
+            value: 2500,
+          },
+          _xhr: Object,
+          _timer: Number,
+          _isDead: Boolean,
+
+          episodes: Array,
           _requestManager: {
             type: Object,
             value: () => new tf_backend.RequestManager(10, 0),
@@ -340,7 +380,7 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
 
           _values: {
             type: String,
-            value: 'trainable_variables',
+            value: 'frames',
             observer: '_configChanged',
           },
 
@@ -372,6 +412,11 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
             value: 10,
             observer: '_configChanged',
           },
+          _record_freq: {
+            type: Number,
+            value: 10,
+            observer: '_configChanged',
+          },
           _playText: {
             type: String,
             value: 'play'
@@ -387,7 +432,7 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
           },
           _isRecording: {
             type: Boolean,
-            value: false,
+            value: true,
             observer: '_configChanged',
           },
           _showAll: {
@@ -413,6 +458,76 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
             value: false,
             observer: '_configChanged',
           },
+          episodeSelectionState: {
+            type: Object,
+            observer: '_storeEpisodeSelectionState',
+            value: () => tf_storage.getObject('episodeSelectionState') || {},
+          },
+          regexInput: {
+            type: String,
+            value:
+              tf_storage.getStringInitializer('regexInput', { defaultValue: '' }),
+            observer: '_regexObserver',
+          },
+          selectedEpisode: {
+            type: String,
+            notify: true,
+          },
+        },
+
+        attached() {
+        },
+
+        detached() {
+          this._clear();
+        },
+
+        _ping() {
+          console.log("Dashboard ping. Episodes", this.episodes)
+          const url = tf_backend.getRouter().pluginRoute(PLUGIN_NAME, '/episodes');
+          this._requestManager.request(url).then(response => {
+
+            this.set('episodes', response['folders'])
+          })
+          this._clear();
+          this._xhr = new XMLHttpRequest();
+          this._xhr.open('GET', PING_ROUTE, true);
+          this._xhr.timeout = this.xhrTimeout;
+          this._xhr.onload = this._onPingLoad.bind(this);
+          this._xhr.onerror = this._onPing.bind(this, false, this.pingSleep);
+          this._xhr.ontimeout = this._onPing.bind(this, false, 1);
+          this._xhr.send(null);
+        },
+
+        _onPingLoad() {
+          if (this._xhr.status == 200) {
+            const response = JSON.parse(this._xhr.responseText);
+            this._onPing(response['status'] == 'alive', this.pingSleep);
+            return;
+          }
+          this._onPing(false, this.pingSleep);
+        },
+
+        _onPing(isAlive, retryMs) {
+          if (isAlive && this._isDead) {
+            console.log("Reset episodeList")
+            // this.set('episodes', EPISODE_ROUTE + '?t=' + new Date().getTime())
+          }
+          this._isDead = !isAlive;
+          this._timer = window.setTimeout(() => this._ping(), retryMs);
+        },
+
+        _clear() {
+          if (this._timer) {
+            window.clearTimeout(this._timer);
+            this._timer = null;
+          }
+          if (this._xhr) {
+            if (this._xhr.readyState < XMLHttpRequest.DONE) {
+              this._xhr.abort();
+            }
+            this._xhr = null;
+          }
         },
 
         _valuesNotFrame(values) {
@@ -455,6 +570,7 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
             scaling: this._scaling,
             window_size: this._windowSize,
             FPS: this._FPS,
+            record_freq: this._record_freq,
             is_recording: this._isRecording,
             is_playing: this._isPlaying,
             show_all: this._showAll,
@@ -471,31 +587,40 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
             this.set('_playText', 'play')
             this.set('_isPlaying', false)
           }
+
+          console.log("Playing", this._isPlaying)
           // this.$.saliency_play_button.classList.toggle('is-playing')
         },
 
-        _toggleRecord() {
-          if (this._recordText == 'start recording') {
-            this.set('_recordText', 'stop recording')
-            this.set('_isRecording', true)
-          } else {
-            this.set('_recordText', 'start recording')
-            this.set('_isRecording', false)
-          }
+        // _toggleRecord() {
+        //   if (this._recordText == 'start recording') {
+        //     this.set('_recordText', 'stop recording')
+        //     this.set('_isRecording', true)
+        //   } else {
+        //     this.set('_recordText', 'start recording')
+        //     this.set('_isRecording', false)
+        //   }
 
-          this.$.record_button.classList.toggle('is-recording')
-        },
+        //   this.$.record_button.classList.toggle('is-recording')
+        // },
+
+        _regexObserver:
+          tf_storage.getStringObserver('regexInput', { defaultValue: '' }),
+
         ready() {
           this.reload()
+          console.log("Attached. Episode list", this.episodes)
+          this._ping();
+          console.log("Loaded dashboard")
         },
 
         reload() {
           const url = tf_backend.getRouter().pluginRoute(PLUGIN_NAME, '/is-active');
-
           this._requestManager.request(url).then(response => {
             this.set('_is_active', response['is_active']);
             this.set('_controls_disabled', !response['is_config_writable']);
           })
+
         },
       });
     })();
