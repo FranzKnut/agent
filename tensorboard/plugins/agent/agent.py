@@ -33,7 +33,7 @@ from tensorboard.plugins.agent import im_util
 from tensorboard.plugins.agent.file_system_tools import read_pickle,\
   write_pickle, write_file
 from tensorboard.plugins.agent.shared_config import PLUGIN_NAME, TAG_NAME,\
-  SUMMARY_FILENAME, DEFAULT_CONFIG, CONFIG_FILENAME, SUMMARY_COLLECTION_KEY_NAME
+   DEFAULT_CONFIG, CONFIG_FILENAME
 from tensorboard.plugins.agent import video_writing
 from tensorboard.plugins.agent.visualizer import Visualizer
 
@@ -49,14 +49,8 @@ class Agent(object):
 
     self.video_writer = None
     self.frame_placeholder = tf.placeholder(tf.uint8, [None, None, None])
-    self.summary_op = tf.summary.tensor_summary(TAG_NAME,
-                                                self.frame_placeholder,
-                                                collections=[
-                                                    SUMMARY_COLLECTION_KEY_NAME
-                                                ])
 
     self.last_image_shape = []
-    self.last_update_time = time.time()
     self.config_last_modified_time = -1
     self.previous_config = dict(DEFAULT_CONFIG)
     self.rewards = []
@@ -87,15 +81,6 @@ class Agent(object):
     return config
 
 
-  def _write_summary(self, session, frame):
-    '''Writes the frame to disk as a tensor summary.'''
-    summary = session.run(self.summary_op, feed_dict={
-        self.frame_placeholder: frame
-    })
-    path = '{}/{}'.format(self.PLUGIN_LOGDIR, SUMMARY_FILENAME)
-    write_file(summary, path)
-
-
   def _get_final_image(self, session, config, frame=None, arrays=None):
     if config['values'] == 'frames':
       if frame is None:
@@ -103,20 +88,6 @@ class Agent(object):
       else:
         frame = frame() if callable(frame) else frame
         final_image = im_util.scale_image_for_display(frame)
-    
-    #TODO: Add elif for saliency
-
-    elif config['values'] == 'arrays':
-      if arrays is None:
-        final_image = im_util.get_image_relative_to_script('arrays-missing.png')
-        # TODO: hack to clear the info. Should be cleaner.
-        self.visualizer._save_section_info([], [])
-      else:
-        final_image = self.visualizer.build_frame(arrays)
-
-    elif config['values'] == 'trainable_variables':
-      arrays = [session.run(x) for x in tf.trainable_variables()]
-      final_image = self.visualizer.build_frame(arrays)
 
     if len(final_image.shape) == 2:
       # Map grayscale images to 3D tensors.
@@ -125,20 +96,9 @@ class Agent(object):
     return final_image
 
 
-  def _enough_time_has_passed(self, FPS):
-    '''For limiting how often frames are computed.'''
-    if FPS == 0:
-      return False
-    else:
-      earliest_time = self.last_update_time + (1.0 / FPS)
-      return time.time() >= earliest_time
-
-
   def _update_frame(self, session, frame, config):
     final_image = self._get_final_image(session, config, frame)
-    #self._write_summary(session, final_image)
     self.last_image_shape = final_image.shape
-
     return final_image
 
 
@@ -160,17 +120,8 @@ class Agent(object):
       tf.logging.info('Finished recording')
 
 
-  # TODO: blanket try and except for production? I don't someone's script to die
-  #       after weeks of running because of a visualization.
   def update(self, session, env_name="env", tag="", frame=None, action=-1, reward=0.0, done=False):
-    '''Creates a frame and writes it to disk.
-
-    Args:
-      frame: a 2D np array. This way the plugin can be used for video of any
-             kind, not just the visualization that comes with the plugin.
-
-             frame can also be a function, which only is evaluated when the
-             "frame" option is selected by the client.
+    '''Updates Agent with information from a single step of the environment
     '''
 
     current_episode_count = self.episode_count
@@ -188,14 +139,12 @@ class Agent(object):
       self._start_episode(env_name.strip(), tag.strip())
 
 
-    # if self._enough_time_has_passed(self.previous_config['FPS']):
-
-    # self.visualizer.update(new_config)
-    self.last_update_time = time.time()
+    # TODO: Add saliency creation logic
     final_image = self._update_frame(session, frame, new_config)
+    self._update_recording(final_image, new_config)
+
     self.actions.append(np.asscalar(action))
     self.rewards.append(np.asscalar(reward))
-    self._update_recording(final_image, new_config)
 
     if done:
       self._finish_episode(current_episode_count)
@@ -206,8 +155,9 @@ class Agent(object):
       tagString = '' if tag == ''  else  '_{}'.format(tag)
       self.LOG_DIR = '{}/{}{}{}-{}-ep{}'.format(d, self.live_prefix, env_name, tag, self.start_time, str(self.episode_count).zfill(6) )
 
+      # TODO: Create video writer for saliency
       self.video_writer = video_writing.VideoWriter(
-        self.LOG_DIR,
+        self.LOG_DIR + "/renders",
         outputs=[video_writing.PNGVideoOutput])
 
 

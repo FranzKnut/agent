@@ -8,7 +8,6 @@ tf_web_library(
     name = "tf_agent_dashboard",
     srcs = [
         "tf-agent-dashboard.html",
-        "tf-agent-info.html",
         "tf-agent-video.html",
         "tf-agent-graph-card.html"
     ],
@@ -37,6 +36,5 @@ tf_web_library(
         "@org_polymer_paper_slider",
         "@org_polymer_paper_spinner",
         "@org_polymer_paper_tooltip",
-        "@org_polymer_paper_checkbox",
     ],
 )
