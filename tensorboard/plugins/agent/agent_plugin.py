@@ -21,6 +21,7 @@ import time
 
 import base64
 import os 
+import json
 import numpy as np
 import tensorflow as tf
 from google.protobuf import message
@@ -62,8 +63,6 @@ class AgentPlugin(base_plugin.TBPlugin):
             '/is-active': self._serve_is_active,
             '/episodes':self._serve_episodes,
             '/images': self._serve_images,
-            '/image': self._serve_image,
-            '/image-zip':self._serve_image_zip,
         }
 
     def is_active(self):
@@ -115,17 +114,22 @@ class AgentPlugin(base_plugin.TBPlugin):
         selected_episode = request.form["selected_episode"]
         view_mode = request.form["view_mode"]
 
-        directory = '{}/{}/{}'.format(self.PLUGIN_LOGDIR, selected_episode, view_mode)
+        image_directory = '{}/{}/{}'.format(self.PLUGIN_LOGDIR, selected_episode, view_mode)
         base64_images = []
 
-        for folder, subs, files in os.walk(directory):
+        for folder, subs, files in os.walk(image_directory):
             for filename in files:
                 path = os.path.abspath(os.path.join(folder, filename))
                 with open(path, "rb") as image_file:
                    base64_images.append(base64.b64encode(image_file.read()))
 
+        metadata_path = '{}/{}/metadata.json'.format(self.PLUGIN_LOGDIR, selected_episode)
 
-        return http_util.Respond(request, {"base64_images":base64_images}, 'application/json')
+        with open(metadata_path) as f:
+            data = json.load(f)
+
+        return http_util.Respond(request, {"base64_images":base64_images, "metadata":data}, 'application/json')
+
 
     @wrappers.Request.application
     def _serve_change_config(self, request):

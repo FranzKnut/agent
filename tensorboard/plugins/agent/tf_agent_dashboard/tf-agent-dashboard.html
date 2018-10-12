@@ -49,7 +49,7 @@ limitations under the License.
           <h3>Video Mode</h3>
           <paper-radio-group id="modeSelector" selected="{{_viewMode}}">
             <paper-radio-button name="renders" disabled="[[_controls_disabled]]">
-              Episode Frames
+              [[_base64Images.length]] Episode Frames
             </paper-radio-button>
             <paper-radio-button name="saliency" disabled="[[_controls_disabled]]">
               Perturbation Saliency
@@ -64,7 +64,7 @@ limitations under the License.
         </div>
         <div class="sidebar-section">
           <h3>Frame delay: [[frameSleep]]ms</h3>
-          <paper-slider id="DelaySlider" value="{{frameSleep}}" type="number" step="5" min="1" max="500" pin="true"
+          <paper-slider id="DelaySlider" value="{{frameSleep}}" type="number" step="5" min="0" max="500" pin="true"
             disabled="[[_controls_disabled]]">
           </paper-slider>
         </div>
@@ -198,7 +198,7 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
 
       .video-player {
         max-height: 75%;
-        max-width: 100%;
+        width: 100%;
         margin: 5px;
         border-radius: 3px;
         overflow: hidden;
@@ -206,8 +206,7 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
       }
 
       .video-element {
-        max-height: 100%;
-        max-width: 100%;
+        width: 100%;
       }
 
       .saliency-controls-wrapper {
@@ -391,6 +390,14 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
             notify: true,
             observer: '_episodesObserver'
           },
+          rewards: {
+            type: Array,
+            notify: true,
+          },
+          actions: {
+            type: Array,
+            notify: true,
+          },
           _viewMode: {
             type: String,
             value: 'renders',
@@ -519,10 +526,13 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
         },
 
         attached() {
+          console.log("Attached")
           this._ping()
         },
 
         detached() {
+          console.log("Detached")
+
           this._clear();
           if (this._frame_timer) {
             window.clearTimeout(this._frame_timer);
@@ -553,13 +563,21 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
           this._requestManager.request(url, postData).then(response => {
             this._base64Images = response['base64_images']
             console.log("Got episode with length", this.selectedEpisode, this._base64Images.length)
-            this.set(this.selectedFrame, 0)
+            console.log("Metadata", response['metadata'])
+            this.actions = response['metadata']['actions']
+            this.rewards = response['metadata']['rewards']
+            this._setupStart()
           })
         },
+        _setupStart() {
+          console.log("Setupstart")
+          this.selectedFrame = 0
+        },
         _selectedFrameObserver() {
+          console.log("Trigged frame observer", this.selectedFrame, this._base64Images.length)
           if (this.selectedFrame < this._base64Images.length) {
             const base = this._base64Images[this.selectedFrame]
-            this.set(this._imageURL, 'data:image/png;base64, ' + base)
+            this._imageURL = 'data:image/png;base64, ' + base
             console.log("Set imageURL")
           }
         },
@@ -696,8 +714,7 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
 
         ready() {
           this.reload()
-          console.log("Attached")
-          console.log("Loaded dashboard")
+          console.log("Ready")
         },
 
         reload() {
