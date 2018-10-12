@@ -47,11 +47,11 @@ limitations under the License.
         </template>
         <div class="sidebar-section">
           <h3>Video Mode</h3>
-          <paper-radio-group id="modeSelector" selected="{{_values}}">
-            <paper-radio-button name="frames" disabled="[[_controls_disabled]]">
+          <paper-radio-group id="modeSelector" selected="{{_viewMode}}">
+            <paper-radio-button name="renders" disabled="[[_controls_disabled]]">
               Episode Frames
             </paper-radio-button>
-            <paper-radio-button name="perturbation_saliency" disabled="[[_controls_disabled]]">
+            <paper-radio-button name="saliency" disabled="[[_controls_disabled]]">
               Perturbation Saliency
             </paper-radio-button>
           </paper-radio-group>
@@ -63,8 +63,14 @@ limitations under the License.
           </paper-slider>
         </div>
         <div class="sidebar-section">
+          <h3>Frame delay: [[frameSleep]]ms</h3>
+          <paper-slider id="DelaySlider" value="{{frameSleep}}" type="number" step="5" min="1" max="500" pin="true"
+            disabled="[[_controls_disabled]]">
+          </paper-slider>
+        </div>
+        <div class="sidebar-section">
           <h3>Episodes</h3>
-          <tf-multi-checkbox id="multiCheckbox" names="[[episodes]]">
+          <tf-multi-checkbox id="multiCheckbox" names="[[episodes]]" out-selected="{{selectedEpisodes}}" selectionState="{{episodeSelectionState}}">
           </tf-multi-checkbox>
         </div>
         <div class="sidebar-section">
@@ -118,14 +124,14 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
             <div class="saliency">
               <h3>Episode Frames</h3>
               <div class="video-player">
-                <tf-agent-video id="video" fps="[[_FPS]]"></tf-agent-video>
-
+                <img id="video-element" src$="[[_imageURL]]"></tf-agent-video>
               </div>
               <div class="saliency-controls-wrapper">
                 <paper-button class="x-button" id="saliency_play_button" on-tap="_togglePlay" disabled="[[_controls_disabled]]">
                   [[_playText]]
                 </paper-button>
-                <paper-slider id="saliency_slider" min="0" max="2500" value="100" editable></paper-slider>
+                <paper-slider id="saliency_slider" min="0" max="[[_base64Images.length]]" value="{{selectedFrame}}"
+                  editable></paper-slider>
               </div>
             </div>
             <div class="graph-wrapper">
@@ -197,6 +203,11 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
         border-radius: 3px;
         overflow: hidden;
         box-shadow: 0 2px 2px 0 #f57c00, 0 1px 5px 0 #f57c00, 0 3px 1px -2px #f57c00;
+      }
+
+      .video-element {
+        max-height: 100%;
+        max-width: 100%;
       }
 
       .saliency-controls-wrapper {
@@ -352,6 +363,7 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
       const PLUGIN_NAME = 'agent'
       const PING_ROUTE = tf_backend.getRouter().pluginRoute(PLUGIN_NAME, '/ping');
       const EPISODE_ROUTE = tf_backend.getRouter().pluginRoute(PLUGIN_NAME, '/episodes')
+      const BLANK = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
 
       Polymer({
         is: 'tf-agent-dashboard',
@@ -362,26 +374,36 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
             type: Number,
             value: 1000,
           },
+          frameSleep: {
+            type: Number,
+            value: 100 // 1000ms / 30fps = ~33ms sleep
+          },
           xhrTimeout: {
             type: Number,
             value: 2500,
           },
           _xhr: Object,
           _timer: Number,
+          _frame_timer: Number,
           _isDead: Boolean,
-
-          episodes: Array,
+          episodes: {
+            type: Array,
+            notify: true,
+            observer: '_episodesObserver'
+          },
+          _viewMode: {
+            type: String,
+            value: 'renders',
+          },
           _requestManager: {
             type: Object,
             value: () => new tf_backend.RequestManager(10, 0),
           },
-
           _values: {
             type: String,
             value: 'frames',
             observer: '_configChanged',
           },
-
           _mode: {
             type: String,
             value: 'variance',
@@ -467,24 +489,98 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
               tf_storage.getStringInitializer('regexInput', { defaultValue: '' }),
             observer: '_regexObserver',
           },
+          selectedEpisodes: { // To catch all selections
+            type: Array,
+            notify: true,
+            observer: '_selectedEpisodesObserver'
+          },
           selectedEpisode: {
             type: String,
+            value: "",
+            notify: true,
+            observer: '_selectedEpisodeObserver',
+          },
+          _base64Images: {
+            type: Array,
+            value: [],
             notify: true,
           },
+          selectedFrame: {
+            type: Number,
+            value: 0,
+            notify: true,
+            observer: '_selectedFrameObserver'
+          },
+          _imageURL: {
+            type: String,
+            notify: true,
+            value: BLANK,
+          }
         },
 
         attached() {
+          this._ping()
         },
 
         detached() {
           this._clear();
+          if (this._frame_timer) {
+            window.clearTimeout(this._frame_timer);
+            this._frame_timer = null;
+          }
+        },
+        _episodesObserver() {
+          if (this.episodes.length > 0 && this.selectedEpisode === "") {
+            this.selectedEpisode = this.episodes[0]
+            this.selectedEpisodes = [this.selectedEpisode]
+          }
+        },
+        _selectedEpisodesObserver() {
+          if (this.selectedEpisodes.length === 1) {
+            const ep = this.selectedEpisodes[0]
+            if (ep !== this.selectedEpisode) {
+              this.selectedEpisode = ep
+            }
+          }
+        },
+        _selectedEpisodeObserver() {
+          console.log("Selected episode", this.selectedEpisode)
+          const url = tf_backend.getRouter().pluginRoute(PLUGIN_NAME, '/images');
+          const postData = {
+            view_mode: this._viewMode,
+            selected_episode: this.selectedEpisode,
+          }
+          this._requestManager.request(url, postData).then(response => {
+            this._base64Images = response['base64_images']
+            console.log("Got episode with length", this.selectedEpisode, this._base64Images.length)
+            this.set(this.selectedFrame, 0)
+          })
+        },
+        _selectedFrameObserver() {
+          if (this.selectedFrame < this._base64Images.length) {
+            const base = this._base64Images[this.selectedFrame]
+            this.set(this._imageURL, 'data:image/png;base64, ' + base)
+            console.log("Set imageURL")
+          }
+        },
+        _moveFrame() {
+          if (this._isPlaying) {
+            this._frame_timer = window.setTimeout(() => this._moveFrame(), this.frameSleep)
+          }
+
+          if (this.selectedFrame + 1 >= this._base64Images.length && this._isPlaying) {
+            // Restart
+            console.log("Replay!")
+            this.selectedFrame = 0
+            return
+          }
+          console.log("Frame")
+          this.selectedFrame += 1
         },
 
         _ping() {
-          console.log("Dashboard ping. Episodes", this.episodes)
           const url = tf_backend.getRouter().pluginRoute(PLUGIN_NAME, '/episodes');
           this._requestManager.request(url).then(response => {
-
             this.set('episodes', response['folders'])
           })
           this._clear();
@@ -579,8 +675,10 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
         },
         _togglePlay() {
           if (this._playText == 'play') {
+            // if (this._base64Images.length === 0) return
             this.set('_playText', 'pause')
             this.set('_isPlaying', true)
+            this._frame_timer = window.setTimeout(() => this._moveFrame(), this.frameSleep)
           } else {
             this.set('_playText', 'play')
             this.set('_isPlaying', false)
@@ -590,25 +688,15 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
           // this.$.saliency_play_button.classList.toggle('is-playing')
         },
 
-        // _toggleRecord() {
-        //   if (this._recordText == 'start recording') {
-        //     this.set('_recordText', 'stop recording')
-        //     this.set('_isRecording', true)
-        //   } else {
-        //     this.set('_recordText', 'start recording')
-        //     this.set('_isRecording', false)
-        //   }
-
-        //   this.$.record_button.classList.toggle('is-recording')
-        // },
-
         _regexObserver:
           tf_storage.getStringObserver('regexInput', { defaultValue: '' }),
 
+        _storeEpisodeSelectionState:
+          tf_storage.getObjectObserver('episodeSelectionState', { defaultValue: {} }),
+
         ready() {
           this.reload()
-          console.log("Attached. Episode list", this.episodes)
-          this._ping();
+          console.log("Attached")
           console.log("Loaded dashboard")
         },
 

@@ -19,6 +19,7 @@ from __future__ import print_function
 import threading
 import time
 
+import base64
 import os 
 import numpy as np
 import tensorflow as tf
@@ -51,6 +52,8 @@ class AgentPlugin(base_plugin.TBPlugin):
             context.logdir, shared_config.PLUGIN_NAME)
         self.record_freq = 50
         self._config_file_lock = threading.Lock()
+        self.current_paths = []
+        self.current_episode = ""
 
     def get_plugin_apps(self):
         return {
@@ -58,6 +61,9 @@ class AgentPlugin(base_plugin.TBPlugin):
             '/ping': self._serve_ping,
             '/is-active': self._serve_is_active,
             '/episodes':self._serve_episodes,
+            '/images': self._serve_images,
+            '/image': self._serve_image,
+            '/image-zip':self._serve_image_zip,
         }
 
     def is_active(self):
@@ -103,6 +109,67 @@ class AgentPlugin(base_plugin.TBPlugin):
     def _serve_episodes(self,request):
         folders = sorted(self._folder_list(), reverse=True)
         return http_util.Respond(request, {"folders": folders}, 'application/json')
+    
+    @wrappers.Request.application
+    def _serve_images(self, request):
+        selected_episode = request.form["selected_episode"]
+        view_mode = request.form["view_mode"]
+
+        directory = '{}/{}/{}'.format(self.PLUGIN_LOGDIR, selected_episode, view_mode)
+        base64_images = []
+
+        for folder, subs, files in os.walk(directory):
+            for filename in files:
+                path = os.path.abspath(os.path.join(folder, filename))
+                with open(path, "rb") as image_file:
+                   base64_images.append(base64.b64encode(image_file.read()))
+
+
+        return http_util.Respond(request, {"base64_images":base64_images}, 'application/json')
+
+    @wrappers.Request.application
+    def _serve_image_zip(self, request):
+        print("Serving zip")
+        selected_episode = request.form["selected_episode"]
+        view_mode = request.form["view_mode"]
+        directory = '{}/{}/{}'.format(self.PLUGIN_LOGDIR, selected_episode, view_mode)
+        zip_dir = "{}/{}/{}_zipped.zip".format(self.PLUGIN_LOGDIR, selected_episode, view_mode)
+
+        arc = shutil.make_archive(zip_dir, 'zip', directory)
+        print("made archive at dir", zip_dir)
+
+        with open(zip_dir, "rb") as f:
+            bytes = f.read()
+            encoded = base64.b64encode(bytes)
+
+        return http_util.Respond(request, {"bytes":encoded}, "application/json")
+
+    @wrappers.Request.application
+    def _serve_image(self,request):
+        selected_frame = int(request.form["selected_frame"])
+        selected_episode = request.form["selected_episode"]
+        view_mode = request.form["view_mode"]
+        directory = '{}/{}/{}'.format(self.PLUGIN_LOGDIR, selected_episode, view_mode)
+
+        if selected_episode != self.current_episode:
+            self.current_episode = selected_episode
+            self.current_paths = []
+            for folder, subs, files in os.walk(directory):
+                for filename in files:
+                    self.current_paths.append(os.path.abspath(os.path.join(folder, filename)))
+
+        filepath = self.current_paths[selected_frame]
+        print(filepath)
+        with open(filepath, "rb") as imageFile:
+            f = imageFile.read()
+            b = bytearray(f)
+        
+        mimetype = 'multipart/x-mixed-replace; boundary=frame'
+        return wrappers.Response(response=self._frame_generator(),
+                             status=200,
+                             mimetype=mimetype)
+
+        return http_util.Respond(request, {'image_bytes', b}, 'application/json')
 
     @wrappers.Request.application
     def _serve_change_config(self, request):
