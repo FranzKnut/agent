@@ -24,7 +24,7 @@ import tensorflow as tf
 
 from tensorboard.plugins.agent import im_util
 from tensorboard.plugins.agent.shared_config import SECTION_HEIGHT,\
-  IMAGE_WIDTH, DEFAULT_CONFIG, SECTION_INFO_FILENAME
+  IMAGE_WIDTH, DEFAULT_CONFIG
 from tensorboard.plugins.agent.file_system_tools import write_pickle
 
 MIN_SQUARE_SIZE = 3
@@ -289,7 +289,7 @@ class Visualizer(object):
 
       infos.append(info)
 
-    write_pickle(infos, '{}/{}'.format(self.logdir, SECTION_INFO_FILENAME))
+    # write_pickle(infos, '{}/{}'.format(self.logdir, SECTION_INFO_FILENAME))
 
 
   def build_frame(self, arrays):

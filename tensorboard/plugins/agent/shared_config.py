@@ -18,17 +18,13 @@ from __future__ import print_function
 
 PLUGIN_NAME = 'agent'
 TAG_NAME = 'agent-frame'
-SUMMARY_FILENAME = 'frame.summary'
 CONFIG_FILENAME = 'config.pkl'
-SECTION_INFO_FILENAME = 'section-info.pkl'
-SUMMARY_COLLECTION_KEY_NAME = 'summaries_agent'
 
 DEFAULT_CONFIG = {
     'values': 'frames',
     'mode': 'variance',
     'scaling': 'layer',
     'window_size': 15,
-    'FPS': 60,
     'record_freq': 50,
     'is_recording': True,
     'show_all': False,
