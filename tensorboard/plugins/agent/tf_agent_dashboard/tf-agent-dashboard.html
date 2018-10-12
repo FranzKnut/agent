@@ -59,6 +59,12 @@ limitations under the License.
           </paper-radio-group>
         </div>
         <div class="sidebar-section">
+          <h3>Record after every {{_record_freq}} episodes</h3>
+          <paper-slider id="RecordSlider" value="{{_record_freq}}" type="number" step="1" min="0" max="200" pin="true"
+            disabled="[[_controls_disabled]]">
+          </paper-slider>
+        </div>
+        <div class="sidebar-section">
           <h3>Episodes</h3>
           <tf-multi-checkbox id="multiCheckbox" names="[[episodes]]">
           </tf-multi-checkbox>
@@ -406,6 +412,11 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
             value: 10,
             observer: '_configChanged',
           },
+          _record_freq: {
+            type: Number,
+            value: 10,
+            observer: '_configChanged',
+          },
           _playText: {
             type: String,
             value: 'play'
@@ -559,6 +570,7 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
             scaling: this._scaling,
             window_size: this._windowSize,
             FPS: this._FPS,
+            record_freq: this._record_freq,
             is_recording: this._isRecording,
             is_playing: this._isPlaying,
             show_all: this._showAll,

@@ -53,6 +53,7 @@ class AgentPlugin(base_plugin.TBPlugin):
         self.PLUGIN_LOGDIR = pau.PluginDirectory(
             context.logdir, shared_config.PLUGIN_NAME)
         self.FPS = 60
+        self.record_freq = 50
         self._config_file_lock = threading.Lock()
         self.most_recent_frame = None
         self.most_recent_info = DEFAULT_INFO
@@ -129,7 +130,7 @@ class AgentPlugin(base_plugin.TBPlugin):
     def _serve_episodes(self,request):
         d=self.PLUGIN_LOGDIR
         folders = list(filter(lambda x: os.path.isdir(os.path.join(d, x)), os.listdir(d)))
-        return http_util.Respond(request, {"folders": sorted(folders)}, 'application/json')
+        return http_util.Respond(request, {"folders": sorted(folders, reverse=True)}, 'application/json')
 
     @wrappers.Request.application
     def _serve_change_config(self, request):
@@ -148,6 +149,7 @@ class AgentPlugin(base_plugin.TBPlugin):
                     config[key] = value
 
         self.FPS = config['FPS']
+        self.record_freq = config['record_freq']
 
         with self._config_file_lock:
             file_system_tools.write_pickle(

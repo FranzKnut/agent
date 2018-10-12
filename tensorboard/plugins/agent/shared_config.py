@@ -29,6 +29,7 @@ DEFAULT_CONFIG = {
     'scaling': 'layer',
     'window_size': 15,
     'FPS': 60,
+    'record_freq': 50,
     'is_recording': True,
     'show_all': False,
     'colormap': 'magma'
