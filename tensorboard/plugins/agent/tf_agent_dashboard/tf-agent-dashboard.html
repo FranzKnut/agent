@@ -64,7 +64,7 @@ limitations under the License.
         </div>
         <div class="sidebar-section">
           <h3>Frame delay: [[frameSleep]]ms</h3>
-          <paper-slider id="DelaySlider" value="{{frameSleep}}" type="number" step="5" min="0" max="500" pin="true"
+          <paper-slider id="DelaySlider" value="{{frameSleep}}" type="number" step="5" min="5" max="500" pin="true"
             disabled="[[_controls_disabled]]">
           </paper-slider>
         </div>
@@ -124,7 +124,7 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
             <div class="saliency">
               <h3>Episode Frames</h3>
               <div class="video-player">
-                <img id="video-element" src$="[[_imageURL]]"></tf-agent-video>
+                <img id="video-element" src$="[[_imageURL]]"></img>
               </div>
               <div class="saliency-controls-wrapper">
                 <paper-button class="x-button" id="saliency_play_button" on-tap="_togglePlay" disabled="[[_controls_disabled]]">
