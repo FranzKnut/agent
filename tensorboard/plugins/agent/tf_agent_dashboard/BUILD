@@ -37,5 +37,6 @@ tf_web_library(
         "@org_polymer_paper_slider",
         "@org_polymer_paper_spinner",
         "@org_polymer_paper_tooltip",
+        "@org_polymer_paper_checkbox",
     ],
 )
