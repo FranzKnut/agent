@@ -47,7 +47,6 @@ class AgentPlugin(base_plugin.TBPlugin):
     plugin_name = shared_config.PLUGIN_NAME
 
     def __init__(self, context):
-        print("Creating agent plugin")
         self._lock = threading.Lock()
         self._MULTIPLEXER = context.multiplexer
         self.PLUGIN_LOGDIR = pau.PluginDirectory(
@@ -59,7 +58,6 @@ class AgentPlugin(base_plugin.TBPlugin):
         self.most_recent_info = DEFAULT_INFO
 
     def get_plugin_apps(self):
-        print("Getting agent plugin apps")
         return {
             '/change-config': self._serve_change_config,
             '/agent-frame': self._serve_agent_frame,
@@ -76,7 +74,6 @@ class AgentPlugin(base_plugin.TBPlugin):
             self.PLUGIN_LOGDIR, shared_config.SECTION_INFO_FILENAME)
         active = tf.gfile.Exists(summary_filename) and\
             tf.gfile.Exists(info_filename)
-        print("Active?", active)
         return active
 
     def is_config_writable(self):
@@ -90,12 +87,10 @@ class AgentPlugin(base_plugin.TBPlugin):
                     file_system_tools.read_pickle(
                         config_filename, shared_config.DEFAULT_CONFIG),
                     config_filename)
-            print("Config Writable")
             return True
         except tf.errors.PermissionDeniedError as e:
             tf.logging.warning(
                 'Unable to write Agent config, controls will be disabled: %s', e)
-            print("Config Unwritable")
             return False
 
     @wrappers.Request.application
@@ -108,7 +103,6 @@ class AgentPlugin(base_plugin.TBPlugin):
             'is_active': is_active,
             'is_config_writable': is_config_writable,
         }
-        print("Is active response", response)
         return http_util.Respond(request, response, 'application/json')
 
     def _fetch_current_frame(self):
