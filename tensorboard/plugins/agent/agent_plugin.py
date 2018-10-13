@@ -113,22 +113,22 @@ class AgentPlugin(base_plugin.TBPlugin):
     def _serve_images(self, request):
         selected_episode = request.form["selected_episode"]
         view_mode = request.form["view_mode"]
+        print("Serving images and metadata for {}/{}".format(selected_episode,view_mode))
 
         image_directory = '{}/{}/{}'.format(self.PLUGIN_LOGDIR, selected_episode, view_mode)
         base64_images = []
-
-        for folder, subs, files in os.walk(image_directory):
-            for filename in files:
-                path = os.path.abspath(os.path.join(folder, filename))
-                with open(path, "rb") as image_file:
-                   base64_images.append(base64.b64encode(image_file.read()))
+        files = sorted(os.listdir(image_directory))
+        for filename in files:
+            path = os.path.abspath(os.path.join(image_directory, filename))
+            with open(path, "rb") as image_file:
+                base64_images.append(base64.b64encode(image_file.read()))
 
         metadata_path = '{}/{}/metadata.json'.format(self.PLUGIN_LOGDIR, selected_episode)
-
         with open(metadata_path) as f:
             data = json.load(f)
 
-        return http_util.Respond(request, {"base64_images":base64_images, "metadata":data}, 'application/json')
+        res_data = {"base64_images":base64_images, "metadata":data}
+        return http_util.Respond(request, res_data, 'application/json')
 
 
     @wrappers.Request.application
