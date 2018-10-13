@@ -2,6 +2,7 @@
 
 A Tensorboard plugin to visualize training of your reinforcement learning agent.
 
+![image](https://user-images.githubusercontent.com/1892071/46906219-61a5b700-cf00-11e8-8e6e-0c821f6ce81f.png)
 
 
 ## Setup
