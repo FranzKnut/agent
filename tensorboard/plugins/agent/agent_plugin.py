@@ -114,16 +114,22 @@ class AgentPlugin(base_plugin.TBPlugin):
         selected_episode = request.form["selected_episode"]
         view_mode = request.form["view_mode"]
         print("Serving images and metadata for {}/{}".format(selected_episode,view_mode))
+        # Check for tsne.png
+        png_path = '{}/{}/{}'.format(self.PLUGIN_LOGDIR, selected_episode, "tsne.png")
+        tsne = ""
+        if os.path.exists(png_path):
+            print("Adding TSNE")
+            with open(png_path, "rb") as image_file:
+                tsne = base64.b64encode(image_file.read())
 
         metadata_path = '{}/{}/metadata.json'.format(self.PLUGIN_LOGDIR, selected_episode)
         with open(metadata_path) as f:
             data = json.load(f)
 
-
-        res_data = {"base64_images":[], "metadata":data}
         base64_images = []
         image_directory = '{}/{}/{}'.format(self.PLUGIN_LOGDIR, selected_episode, view_mode)
         if not os.path.isdir(image_directory):
+            res_data = {"base64_images":[], "metadata":data, "tsne": tsne}
             return http_util.Respond(request, res_data, 'application/json')
         else:
             files = sorted(os.listdir(image_directory))
@@ -133,7 +139,7 @@ class AgentPlugin(base_plugin.TBPlugin):
                     base64_images.append(base64.b64encode(image_file.read()))
 
 
-        res_data["base64_images"] = base64_images
+        res_data = {"base64_images":base64_images, "metadata":data, "tsne": tsne}
         return http_util.Respond(request, res_data, 'application/json')
 
     @wrappers.Request.application

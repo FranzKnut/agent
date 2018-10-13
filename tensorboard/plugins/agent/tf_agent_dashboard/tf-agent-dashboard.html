@@ -49,12 +49,15 @@ limitations under the License.
           <h3>[[_viewModeTitle]]</h3>
           <paper-radio-group id="modeSelector" selected="{{_viewMode}}">
             <paper-radio-button name="renders" disabled="[[_controls_disabled]]">
-              [[_base64Images.length]] Episode Frames
+              Episode Frames
             </paper-radio-button>
             <paper-radio-button name="saliency" disabled="[[_controls_disabled]]">
-              Perturbation Saliency
+              Saliency Map Frames
             </paper-radio-button>
           </paper-radio-group>
+          <p>
+            Frame count : [[_base64Images.length]]
+          </p>
         </div>
         <div class="sidebar-section">
           <h3>Record after every {{_record_freq}} episodes</h3>
@@ -123,6 +126,7 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
           <div class="center-wrapper">
             <div class="saliency">
               <h3 class="episode-header">[[selectedEpisode]]</h3>
+              <!-- <p>Frame Count [[_base64Images.length]]       Total Reward [[_totalReward]]</p> -->
               <div class="video-player">
                 <img class="video-element" src$="[[_imageURL]]"></img>
               </div>
@@ -136,14 +140,11 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
             </div>
             <div class="graph-wrapper">
               <div class="top-graph">
-                <h3>Action [[_selectedAction]]</h3>
+                <h3>Reward [[_selectedReward]] | Action [[_selectedAction]]</h3>
                 <img class="controller-img" src$="[[_controllerURL]]"></img>
-                <p></p>
               </div>
               <div class="bottom-graph">
-                <h3>Cumulative Reward</h3>
-                <tf-agent-graph-card data-to-load="[[actions]]"></tf-agent-graph-card>
-                <p> </p>
+                <img class="tsne-img" src$="[[_tsneURL]]"></img>
               </div>
             </div>
           </div>
@@ -188,20 +189,23 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
         line-height: 0;
         text-align: center;
         height: auto;
+        max-width: 100%;
         border-radius: 5px;
         background-color: #fff;
         box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2);
       }
 
       .video-player {
-        height: 70%;
+        height: 73%;
         text-align: center;
         background-size: 100%;
-        width: auto;
         margin: 5px;
+        margin-top: 20px;
         border-radius: 3px;
+        max-width: 100%;
         overflow: hidden;
         object-fit: fill;
+        display: inline-block;
         box-shadow: 0 2px 2px 0 #f57c00, 0 1px 5px 0 #f57c00, 0 3px 1px -2px #f57c00;
       }
 
@@ -218,8 +222,7 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
         grid-row-gap: 15px;
         vertical-align: middle;
         height: 15px;
-        margin-top: 15px;
-        margin-bottom: 10px
+        margin-top: 30px;
       }
 
       paper-slider#saliency_slider {
@@ -251,12 +254,16 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
       .bottom-graph {
         margin-top: 10px;
         padding: 10px;
+        text-align: center;
         color: #757575;
         border-radius: 5px;
         background-color: #fff;
         box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2);
       }
 
+      .tsne-img {
+        width: 440px;
+      }
 
       paper-checkbox {
         display: block;
@@ -523,7 +530,7 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
             value: [],
             notify: true,
           },
-          selectedFrame: {
+          selectedFrame: { // Drives behavior while an episode is selected.
             type: Number,
             value: 0,
             notify: true,
@@ -535,6 +542,7 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
             value: BLANK,
           },
           _selectedAction: String,
+          _selectedReward: String,
           _controllerMap: {
             type: Object,
             value: () => ({
@@ -547,6 +555,11 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
             })
           },
           _controllerURL: {
+            type: String,
+            notify: true,
+            value: BLANK,
+          },
+          _tsneURL: {
             type: String,
             notify: true,
             value: BLANK,
@@ -582,7 +595,7 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
           }
         },
         _retrieveImages() {
-          if (this.selectedEpisode == null) return
+          if (this.selectedEpisode == null || this.selectedEpisode === "") return
           console.log("Retrieving images")
           const url = tf_backend.getRouter().pluginRoute(PLUGIN_NAME, '/images');
           const postData = {
@@ -591,13 +604,19 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
           }
           this._viewModeTitle = "Video Mode - LOADING..."
           this._requestManager.request(url, postData).then(response => {
-            this._base64Images = response['base64_images']
             console.log("Got episode with length", this.selectedEpisode, this._base64Images.length)
-            console.log("Metadata", response['metadata'])
+
+            // Set properties
+            this._base64Images = response['base64_images']
+            this._tsneURL = 'data:image/png;base64, ' + response['tsne']
             this.actions = response['metadata']['actions']
             this.rewards = response['metadata']['rewards']
-            this.selectedFrame = 0
-            this._togglePlay()
+            this.selectedFrame = Math.max(0, Math.min(this.selectedFrame, this._base64Images.length - 1))
+
+            // Update view
+            if (this._isPlaying == false) {
+              this._togglePlay()
+            }
             this._viewModeTitle = "Video Mode"
           })
         },
@@ -632,6 +651,7 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
           if (this.selectedFrame < this.actions.length) {
             const action = this.actions[this.selectedFrame]
             this._selectedAction = action.toString()
+            this._selectedReward = this.rewards[this.selectedFrame].toString()
             // TODO: Move to metadata. Environment specific.
             const actionMap = {
               "0": "JoystickStraightUnpressed",
