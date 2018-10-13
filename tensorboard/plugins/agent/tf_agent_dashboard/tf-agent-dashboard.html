@@ -657,13 +657,13 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
               "0": "JoystickStraightUnpressed",
               "1": "JoystickStraightPressed",
               "2": "JoystickStraightPressed",
-              "3": "JoystickRightUnpressed",
-              "4": "JoystickLeftUnpressed",
+              "4": "JoystickRightUnpressed",
+              "3": "JoystickLeftUnpressed",
               "5": "JoystickStraightUnpressed",
-              "6": "JoystickRightPressed",
-              "7": "JoystickLeftPressed",
-              "8": "JoystickRightUnpressed",
-              "9": "JoystickLeftUnpressed",
+              "7": "JoystickRightPressed",
+              "6": "JoystickLeftPressed",
+              "9": "JoystickRightUnpressed",
+              "8": "JoystickLeftUnpressed",
             }
             const actionKey = actionMap[action.toString()] || "JoystickStraightUnpressed"
             return this._controllerMap[actionKey]
