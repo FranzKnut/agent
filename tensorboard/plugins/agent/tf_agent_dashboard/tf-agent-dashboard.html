@@ -632,6 +632,7 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
           if (this.selectedFrame < this.actions.length) {
             const action = this.actions[this.selectedFrame]
             this._selectedAction = action.toString()
+            // TODO: Move to metadata. Environment specific.
             const actionMap = {
               "0": "JoystickStraightUnpressed",
               "1": "JoystickStraightPressed",
