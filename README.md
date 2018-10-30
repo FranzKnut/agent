@@ -4,6 +4,8 @@ A Tensorboard plugin to explore reinforcement learning models at the timestep le
 
 ![image](https://user-images.githubusercontent.com/1892071/46906219-61a5b700-cf00-11e8-8e6e-0c821f6ce81f.png)
 
+Demo below.
+
 # Purpose
 In 2018 it's surprisingly difficult to understand **why** a reinforcement or inverse reinforcement learning agent makes a decision.
 
