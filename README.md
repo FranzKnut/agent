@@ -13,7 +13,7 @@ The authors of Agent believe a primary bottleneck is misfitted tooling. The curr
 
 The authors of Agent find the above state of affairs frustrating for a [subfield of technical AI Safety](https://medium.com/@deepmindsafetyresearch/building-safe-artificial-intelligence-52f5f75058f1) with low-hanging fruit. RL and IRL research needs a well-documented platform for intepreting agents that is functional across standard workflows. An API you can integrate into your new or existing RL model training code in minutes. A dashboard that gives you temporal control and deep visualizations out of the box.
 
-The purpose of Agent is to accelerate progress in deep RL/IRL intepretability. We are very interested in perspectives from the intepretability, deep RL/IRL, and AI Safety communities. Please share your feedback through GitHub issues.
+The purpose of Agent is to accelerate progress in deep RL/IRL intepretability. We are very interested in perspectives from people in the intepretability, deep RL/IRL, and AI Safety communities. Please share your feedback through [GitHub issues](https://github.com/andrewschreiber/agent/issues/new).
 
 # Prototype demo (with sound)
 
