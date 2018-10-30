@@ -5,20 +5,28 @@ A Tensorboard plugin to explore reinforcement learning models at the timestep le
 ![image](https://user-images.githubusercontent.com/1892071/46906219-61a5b700-cf00-11e8-8e6e-0c821f6ce81f.png)
 
 # Purpose
-In 2018 it's surprisingly difficult to understand why a reinforcement or inverse reinforcement learning agent makes a decision.
+In 2018 it's surprisingly difficult to understand **why** a reinforcement or inverse reinforcement learning agent makes a decision.
 
-Why don't we have usable interpretability techniques in reinforcement learning like we see from [distill.pub](distill.pub) in supervised learning? Victoria Kraknova made a [well-reasoned call](https://www.youtube.com/watch?v=3HzIutdlpho) for more research in deep RL interpretability for AI Safety at a NIPS workshop a year ago and yet the field has published little there since. 
+How come the research community lacks usable, open-source interpretability techniques for reinforcement learning like we see from [distill.pub](distill.pub) for supervised learning? Victoria Kraknova made a [well-reasoned call](https://www.youtube.com/watch?v=3HzIutdlpho) for more research in deep RL interpretability for AI Safety at a NIPS workshop a year ago and yet the field has published little there since. It seems there is much to be explored how a RL agent processes its input and decides on an action on a moment-by-moment basis and such work would be valuable. What is causing the paralysis?
 
-The authors of Agent believe the bottleneck is misfitted tooling. The current process to extract and save the relevant network activations and episode frames is laborious and complex. Rendering visualizations in a time-dynamic UI is generally intractable in common tools. Even if you succeed, the technique(s) you build tend to be tightly-coupled to your project (see [this group](https://arxiv.org/pdf/1602.02658.pdf) who made an interesting deep RL intepretability tool, but you have to run Lua and Windows 10). 
+The authors of Agent believe a primary bottleneck is misfitted tooling. The current process to extract and save the relevant network activations and episode frames is laborious and complex. Rendering visualizations in a time-dynamic UI is generally intractable in common tools (Jupyter, Tensorboard, Visdom, etc). Even if you succeed, the technique(s) you build tend to be tightly-coupled to your project (see [this group](https://arxiv.org/pdf/1602.02658.pdf) who made an interesting deep RL intepretability tool, but you have to be running Lua and Windows 10). 
 
-The authors of Agent find the above state of affairs frustrating for a [subfield of technical AI Safety](https://medium.com/@deepmindsafetyresearch/building-safe-artificial-intelligence-52f5f75058f1) with low-hanging fruit. RL and IRL need a well-documented platform for intepreting agents that is functional across standard workflows. Agent is built in Python within Tensorboard due to the visualization suite's robustness and popularity among researchers. We hope someday Agent will be merged into Tensorboard itself like the Beholder plugin.
+The authors of Agent find the above state of affairs frustrating for a [subfield of technical AI Safety](https://medium.com/@deepmindsafetyresearch/building-safe-artificial-intelligence-52f5f75058f1) with low-hanging fruit. RL and IRL research needs a well-documented platform for intepreting agents that is functional across standard workflows. 
 
-Agent v0 ships end-of-November with two deep learning interpretability techniques, t-SNE and [saliency heatmaps](https://arxiv.org/abs/1711.00138), which we hope will prove immediately useful for debugging. Setup should take a few minutes or less. For researchers with fresh insight into RL intepretability, Agent v1 will support custom visualizations with the aim to reduce the overhead in developing new techniques by an order of magnitude. Please share your feedback through GitHub issues.
-
-The purpose of Agent is to accelerate progress in deep RL/IRL intepretability.
+The purpose of Agent is to accelerate progress in deep RL/IRL intepretability. We are very interested in perspectives from the intepretability, deep RL/IRL, and AI Safety communities. Please share your feedback through GitHub issues.
 
 # Prototype demo (with sound)
+
 ----
+
+
+# Goals
+Agent was built in Python within Tensorboard due to the visualization suite's robustness and popularity among researchers. We hope someday Agent could be merged into Tensorboard itself like the [Beholder plugin](https://github.com/tensorflow/tensorboard/pull/613).
+
+Agent v0 ships end-of-November with two deep learning interpretability techniques, t-SNE and [saliency heatmaps](https://arxiv.org/abs/1711.00138), which we hope will prove immediately useful. Setup should take a few minutes or less. 
+
+For researchers with fresh insight into RL intepretability, Agent v1 will support custom visualizations with the aim to reduce the overhead in developing new techniques by an order of magnitude. 
+
 
 ## Setup (Work in progress)
 ### Note: Agent is currently built for demonstration purposes.
