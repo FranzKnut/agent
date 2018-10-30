@@ -5,7 +5,7 @@ A Tensorboard plugin to explore reinforcement learning models at the timestep le
 ![image](https://user-images.githubusercontent.com/1892071/46906219-61a5b700-cf00-11e8-8e6e-0c821f6ce81f.png)
 
 # Purpose
-In 2018 it's surprisingly difficult to understand why a RL or IRL agent makes a decision.
+In 2018 it's surprisingly difficult to understand why a reinforcement or inverse reinforcement learning agent makes a decision.
 
 Why don't we have usable interpretability techniques in reinforcement learning like we see from [distill.pub](distill.pub) in supervised learning? Victoria Kraknova made a [well-reasoned call](https://www.youtube.com/watch?v=3HzIutdlpho) for more research in deep RL interpretability for AI Safety at a NIPS workshop a year ago and yet the field has published little there since. 
 
