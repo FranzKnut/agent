@@ -4,8 +4,6 @@ A Tensorboard plugin to explore reinforcement learning models at the timestep le
 
 ![image](https://user-images.githubusercontent.com/1892071/46906219-61a5b700-cf00-11e8-8e6e-0c821f6ce81f.png)
 
-Demo below.
-
 # Purpose
 In 2018 it's surprisingly difficult to understand **why** a reinforcement or inverse reinforcement learning agent makes a decision.
 
@@ -17,7 +15,19 @@ The authors of Agent find the above state of affairs frustrating for a [subfield
 
 The purpose of Agent is to accelerate progress in deep RL/IRL intepretability to help answer why. For debugging, interest, and research. We are very interested in perspectives from people in the intepretability, deep RL/IRL, and AI Safety communities. Please share your feedback through [GitHub issues](https://github.com/andrewschreiber/agent/issues/new).
 
-# Prototype demo (with sound)
+# Saliency heatmap demo
+## Observations
+The goal of the Atari game Enduro is to pass other cars without colliding. The saliency heatmap will overlay a blue circle where blurring the Atari frame produces a large change in the value estimate of the network. 
+
+Notice that the well-trained model adjusts itself substantially on the cars, especially when it's coming close to passing. Meanwhile the untrainted model doesn't place much attention on the cars specifically, it's attention meanders somewhat randomly across the screen.
+
+What do you notice?
+
+## 3,000 episodes of training
+![Expert](https://user-images.githubusercontent.com/1892071/47758313-bae34980-dc67-11e8-8585-277a1b0bb4a2.gif)
+
+## 5 episodes of training
+![Noob](https://user-images.githubusercontent.com/1892071/47758314-bae34980-dc67-11e8-80c8-921d215ae474.gif)
 
 ----
 
