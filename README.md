@@ -1,6 +1,6 @@
 # Agent
 
-A Tensorboard plugin to explore reinforcement learning models at the timestep level.
+A Tensorboard plugin to explore reinforcement learning models at the timestep level. A project by Andrew Schreiber and [Fabian Steuer](https://github.com/fabiansteuer).
 
 ## Saliency heatmap demo
 ### Observations
