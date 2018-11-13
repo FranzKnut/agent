@@ -138,8 +138,6 @@ class Agent(object):
     if self.video_writer is None:
       self._start_episode(env_name.strip(), tag.strip())
 
-
-    # TODO: Add saliency creation logic
     final_image = self._update_frame(session, frame, new_config)
     self._update_recording(final_image, new_config)
 
