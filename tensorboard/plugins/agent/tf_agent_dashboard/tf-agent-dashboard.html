@@ -73,7 +73,7 @@ limitations under the License.
         </div>
         <div class="sidebar-section">
           <h3>Episodes</h3>
-          <tf-multi-checkbox id="multiCheckbox" names="[[episodes]]" out-selected="{{selectedEpisodes}}" selectionState="{{episodeSelectionState}}">
+          <tf-multi-checkbox id="multiCheckbox" names="[[episodes]]" out-selected="{{selectedEpisodes}}" >
           </tf-multi-checkbox>
         </div>
         <div class="sidebar-section">
@@ -503,11 +503,6 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
             value: false,
             observer: '_configChanged',
           },
-          episodeSelectionState: {
-            type: Object,
-            observer: '_storeEpisodeSelectionState',
-            value: () => tf_storage.getObject('episodeSelectionState') || {},
-          },
           regexInput: {
             type: String,
             value:
@@ -781,9 +776,6 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
 
         _regexObserver:
           tf_storage.getStringObserver('regexInput', { defaultValue: '' }),
-
-        _storeEpisodeSelectionState:
-          tf_storage.getObjectObserver('episodeSelectionState', { defaultValue: {} }),
 
         ready() {
           this.reload()
