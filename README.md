@@ -20,6 +20,10 @@ One observation is that that the well-trained model adjusts itself substantially
 
 Why is this interesting? Perhaps it had turned out the well-trained model was barely paying attention to the cars at all. That would mean the 'expert' had learned some trick undiscernable to humans in it's environment, which may not generalize or be otherwise problematic from a safety perspective. A loss or averaged rewards graph would not permit you this insight; your metrics would simply tell you the model had learned well.
 
+## Live example
+### Updated Nov 26, 2018
+http://li592-70.members.linode.com:6006/#agent
+
 ## Purpose / Musings
 It's surprisingly difficult to understand **why** a reinforcement or inverse reinforcement learning agent makes a decision today.
 
