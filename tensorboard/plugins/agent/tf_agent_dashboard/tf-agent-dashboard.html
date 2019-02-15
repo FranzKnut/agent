@@ -59,15 +59,16 @@ limitations under the License.
             Frame count : [[_base64Images.length]]
           </p>
         </div>
-        <div class="sidebar-section">
+        <!-- Create a entire "training section" that only appears during training. Includes record after, etc. -->
+        <!-- <div class="sidebar-section">
           <h3>Record after every {{_record_freq}} episodes</h3>
           <paper-slider id="RecordSlider" value="{{_record_freq}}" type="number" step="1" min="0" max="200" pin="true"
             disabled="[[_controls_disabled]]">
           </paper-slider>
-        </div>
+        </div> -->
         <div class="sidebar-section">
-          <h3>Frame delay: [[frameSleep]]ms</h3>
-          <paper-slider id="DelaySlider" value="{{frameSleep}}" type="number" step="5" min="0" max="500" pin="true"
+          <h3>Frames per second: [[playbackFPS]]ms</h3>
+          <paper-slider id="DelaySlider" value="{{playbackFPS}}" type="number" step="1" min="1" max="120" pin="true"
             disabled="[[_controls_disabled]]">
           </paper-slider>
         </div>
@@ -384,10 +385,6 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
             type: Number,
             value: 1000,
           },
-          frameSleep: {
-            type: Number,
-            value: 100 // 1000ms / 30fps = ~33ms sleep
-          },
           xhrTimeout: {
             type: Number,
             value: 2500,
@@ -440,22 +437,23 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
             value: 'layer',
             observer: '_configChanged',
           },
-
           _windowSize: {
             type: Number,
             value: 15,
             observer: '_configChanged',
           },
-
-          _previousFPS: {
+          _previousFPS: { // For recording
             type: Number,
             value: 30,
           },
-
-          _FPS: {
+          _FPS: { // For recording
             type: Number,
             value: 10,
             observer: '_configChanged',
+          },
+          playbackFPS: { // For playback
+            type: Number,
+            value: 60
           },
           _record_freq: {
             type: Number,
@@ -639,7 +637,7 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
           }
 
           if (this._isPlaying) {
-            this._frame_timer = window.setTimeout(() => this._moveFrame(), this.frameSleep)
+            this._startFrameTimer()
           }
         },
         _computeControllerURL() {
@@ -759,12 +757,13 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
 
           this._requestManager.request(url, postData)
         },
+
         _togglePlay() {
           if (this._playText == 'play') {
             // if (this._base64Images.length === 0) return
             this.set('_playText', 'pause')
             this.set('_isPlaying', true)
-            this._frame_timer = window.setTimeout(() => this._moveFrame(), this.frameSleep)
+            this._startFrameTimer()
           } else {
             this.set('_playText', 'play')
             this.set('_isPlaying', false)
@@ -772,6 +771,11 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
 
           console.log("Playing", this._isPlaying)
           // this.$.saliency_play_button.classList.toggle('is-playing')
+        },
+
+        _startFrameTimer() {
+          const delay = 1000/this.playbackFPS // in milliseconds
+          this._frame_timer = window.setTimeout(() => this._moveFrame(), delay) 
         },
 
         _regexObserver:
