@@ -27,6 +27,7 @@ limitations under the License.
 <link rel="import" href="../tf-dashboard-common/tf-multi-checkbox.html">
 <link rel="import" href="tf-agent-video.html">
 <link rel="import" href="tf-agent-graph-card.html">
+<link rel="import" href="tf-agent-helpers.html">
 
 
 <dom-module id="tf-agent-dashboard">
@@ -68,7 +69,7 @@ limitations under the License.
         </div> -->
         <div class="sidebar-section">
           <h3>Frames per second: [[playbackFPS]]ms</h3>
-          <paper-slider id="DelaySlider" value="{{playbackFPS}}" type="number" step="2" min="1" max="60" pin="true"
+          <paper-slider id="DelaySlider" value="{{playbackFPS}}" type="number" step="1" min="1" max="60" pin="true"
             disabled="[[_controls_disabled]]">
           </paper-slider>
         </div>
@@ -659,6 +660,7 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
               "8": "JoystickLeftUnpressed",
             }
             const actionKey = actionMap[action.toString()] || "JoystickStraightUnpressed"
+            return tf_agent_dashboard.controllerBase64ForKey(actionKey)
             return this._controllerMap[actionKey]
           }
         },
