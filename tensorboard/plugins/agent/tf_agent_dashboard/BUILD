@@ -11,7 +11,7 @@ tf_web_library(
         "tf-agent-video.html",
         "tf-agent-graph-card.html",
         "tf-agent-helpers.html",
-        "tf-agent-helpers.ts"
+        "tf-agent-helpers.ts",
     ],
     path = "/tf-agent-dashboard",
     visibility = ["//visibility:public"],
