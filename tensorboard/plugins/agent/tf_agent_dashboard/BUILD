@@ -9,9 +9,12 @@ tf_web_library(
     srcs = [
         "tf-agent-dashboard.html",
         "tf-agent-video.html",
-        "tf-agent-graph-card.html"
+        "tf-agent-graph-card.html",
+        "tf-agent-helpers.html",
+        "tf-agent-helpers.ts",
     ],
     path = "/tf-agent-dashboard",
+    visibility = ["//visibility:public"],
     deps = [
         "//tensorboard/components/tf_backend",
         "//tensorboard/components/tf_card_heading",
