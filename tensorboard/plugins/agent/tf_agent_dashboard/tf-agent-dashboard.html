@@ -57,7 +57,7 @@ limitations under the License.
             </paper-radio-button>
           </paper-radio-group>
           <p>
-            Frame count : [[_base64Images.length]]
+            Frame count: [[_base64Images.length]]
           </p>
         </div>
         <!-- Create a entire "training section" that only appears during training. Includes record after, etc. -->
@@ -68,7 +68,7 @@ limitations under the License.
           </paper-slider>
         </div> -->
         <div class="sidebar-section">
-          <h3>Frames per second: [[playbackFPS]]ms</h3>
+          <h3>Frames per second: [[playbackFPS]]</h3>
           <paper-slider id="DelaySlider" value="{{playbackFPS}}" type="number" step="1" min="1" max="60" pin="true"
             disabled="[[_controls_disabled]]">
           </paper-slider>
@@ -730,7 +730,6 @@ with MonitoredSession(..., hooks=[agent_hook]) as sess:
               return
             }
           }
-
           const url = tf_backend.getRouter().pluginRoute(PLUGIN_NAME, '/change-config');
           const postData = {
             values: this._values,
