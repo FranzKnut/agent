@@ -55,7 +55,6 @@ class Agent(object):
     self.previous_config = dict(DEFAULT_CONFIG)
     self.rewards = []
     self.actions = []
-    self.episode_count = 0
     self.start_time = round(time.time())
 
     if not tf.gfile.Exists(self.PLUGIN_LOGDIR + '/config.pkl'):
@@ -120,23 +119,20 @@ class Agent(object):
       tf.logging.info('Finished recording')
 
 
-  def update(self, session, env_name="env", tag="", frame=None, action=-1, reward=0.0, done=False):
+  def update(self, session, episode_n, frame=None, action, reward=0.0, done=False):
     '''Updates Agent with information from a single step of the environment
     '''
-
-    current_episode_count = self.episode_count
-
-    if done:
-      self.episode_count += 1
+    assert(session)
+    assert(n_episode)
 
     new_config = self._get_config()
     record_freq = new_config['record_freq']
 
-    if current_episode_count % record_freq != 0 or record_freq == 0:
+    if episode_n % record_freq != 0 or record_freq == 0:
       return
 
     if self.video_writer is None:
-      self._start_episode(env_name.strip(), tag.strip())
+      self._start_episode(env_name.strip(), tag.strip(), episode_n)
 
     final_image = self._update_frame(session, frame, new_config)
     self._update_recording(final_image, new_config)
@@ -145,13 +141,27 @@ class Agent(object):
     self.rewards.append(np.asscalar(reward))
 
     if done:
-      self._finish_episode(current_episode_count)
+      self._finish_episode(episode_n)
+      self._freeze_model(session)
 
-  def _start_episode(self, env_name, tag):
+
+  def _freeze_model(self, session):
+      ''' Uses tensorboard's model freeze in order to export a model for later analysis
+      '''
+      print("Freeze model. < IMPLEMENT >")
+      
+      saver.save(sess, "./tmp/model", write_meta_graph=True, global_step=1)
+
+      with open("./tmp/" + "graph.pb", 'wb') as f:
+        f.write(sess.graph_def.SerializeToString())
+      sess.close()
+
+
+  def _start_episode(self, env_name, tag, episode_n):
       # Directory
       d=self.PLUGIN_LOGDIR
       tagString = '' if tag == ''  else  '_{}'.format(tag)
-      self.LOG_DIR = '{}/{}{}{}-{}-ep{}'.format(d, self.live_prefix, env_name, tag, self.start_time, str(self.episode_count).zfill(6) )
+      self.LOG_DIR = '{}/{}{}{}-{}-ep{}'.format(d, self.live_prefix, env_name, tag, self.start_time, str(episode_n).zfill(6) )
 
       # TODO: Create video writer for saliency
       self.video_writer = video_writing.VideoWriter(
