@@ -37,7 +37,7 @@ limitations under the License.
         <template is="dom-if" if="[[_controls_disabled]]">
           <div class="sidebar-section">
             <p class="controls-disabled-message">
-              Controls disabled: directory is not writeable.
+              Controls disabled, directory is not writeable.
             </p>
             <p class="disclaimer">
               Agent requires write access to the log directory in order
@@ -94,29 +94,14 @@ limitations under the License.
 
               <p>To use Agent, import and instantiate the <code>Agent</code>
                 class, and call its <code>update</code> method with a
-                <code>Session</code> argument after every train step:</p>
+                <code>Session</code> argument after every train step. For example:</p>
 
-              <pre>
-from tensorboard.plugins.agent import Agent
-agent = Agent(LOG_DIRECTORY)
-
-# inside train loop
-agent.update(
-  session=sess,
-  arrays=list_of_np_arrays,  # optional argument
-  frame=two_dimensional_np_array,  # optional argument
-)</pre>
+              <pre></pre>
               <p>If using <code>tf.train.MonitoredSession</code>, you can use
-                <code>AgentHook</code>:
-
-                <pre>
-from tensorboard.plugins.agent import AgentHook
-agent_hook = AgentHook(LOG_DIRECTORY)
-with MonitoredSession(..., hooks=[agent_hook]) as sess:
-  sess.run(train_op)</pre>
+                <code>Agent</code>:
 
                 <p>If you think everything is set up properly, please see
-                  <a href="https://github.com/tensorflow/tensorboard/blob/master/tensorboard/plugins/agent/README.md">the
+                  <a href="https://github.com/andrewschreiber/agent">the
                     README</a>
                   for more information and consider filing an issue on GitHub.
 

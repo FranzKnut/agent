@@ -18,10 +18,11 @@ tf_web_library(
         "//tensorboard/components/tf_tensorboard:default_plugins",
     ],
 )
-
+# TODO: BEFORE MERGE/PRODUCTION MAKE compile = True
+# Reduces html incremental build time from 50s -> 7s
 tensorboard_html_binary(
     name = "index",
-    compile = True,
+    compile = False,
     input_path = "/tensorboard.html",
     output_path = "/index.html",
     deps = [":tensorboard"],

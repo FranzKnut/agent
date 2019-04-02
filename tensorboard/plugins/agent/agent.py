@@ -119,7 +119,7 @@ class Agent(object):
       tf.logging.info('Finished recording')
 
 
-  def update(self, session, episode_n, frame=None, action, reward=0.0, done=False):
+  def update(self, session, episode_n, action, frame=None, reward=0.0, done=False):
     '''Updates Agent with information from a single step of the environment
     '''
     assert(session)
