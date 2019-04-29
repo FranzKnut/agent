@@ -64,7 +64,7 @@ Python virtual environment (3.6)
 
 [Bazel](https://docs.bazel.build/versions/master/install.html) build tool from Google. Install guide in link. (0.17.2)
 
-Tensorflow (1.11)
+Tensorflow (1.13.1)
 
 Then:
 
