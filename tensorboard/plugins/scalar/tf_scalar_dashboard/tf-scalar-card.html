@@ -25,6 +25,7 @@ limitations under the License.
 <link rel="import" href="../tf-backend/tf-backend.html">
 <link rel="import" href="../tf-line-chart-data-loader/tf-line-chart-data-loader.html">
 <link rel="import" href="../tf-card-heading/tf-card-heading.html">
+<link rel="import" href="../tf-dashboard-common/tf-downloader.html">
 
 <!--
   A card that handles loading data (at the right times), rendering a scalar
@@ -40,11 +41,12 @@ limitations under the License.
   <div id="tf-line-chart-data-loader-container">
     <tf-line-chart-data-loader
       active="[[active]]"
-      color-scale="[[_getColorScale(multiExperiments)]]"
+      color-scale="[[_getColorScale(multiExperiments, colorScale)]]"
       data-series="[[_getDataSeries(multiExperiments, dataToLoad.*)]]"
       data-to-load="[[dataToLoad]]"
       get-data-load-name="[[_getDataLoadName]]"
       get-data-load-url="[[getDataLoadUrl]]"
+      request-data="[[requestData]]"
       ignore-y-outliers="[[ignoreYOutliers]]"
       load-data-callback="[[_loadDataCallback]]"
       load-key="[[tag]]"
@@ -87,7 +89,7 @@ limitations under the License.
         <paper-listbox class="dropdown-content" slot="dropdown-content">
           <paper-item>
             <a id="svgLink" download="[[tag]].svg">
-              Download Current Graph as SVG
+              Download Current Chart as SVG
             </a>
           </paper-item>
         </paper-listbox>
@@ -96,25 +98,11 @@ limitations under the License.
     <span style="flex-grow: 1"></span>
     <template is="dom-if" if="[[showDownloadLinks]]">
       <div class="download-links">
-        <paper-dropdown-menu
-          no-label-float="true"
-          label="run to download"
-          selected-item-label="{{_runToDownload}}"
-        >
-          <paper-menu class="dropdown-content" slot="dropdown-content">
-            <template is="dom-repeat" items="[[dataToLoad]]">
-              <paper-item no-label-float=true>[[item.run]]</paper-item>
-            </template>
-          </paper-menu>
-        </paper-dropdown-menu>
-        <a
-          download="run_[[_runToDownload]]-tag-[[tag]].csv"
-          href="[[_csvUrl(tag, _runToDownload)]]"
-        >CSV</a> <a
-          download="run_[[_runToDownload]]-tag-[[tag]].json"
-          href="[[_jsonUrl(tag, _runToDownload)]]"
-        >JSON</a>
-        </div>
+        <tf-downloader
+          runs="[[_runsFromData(dataToLoad)]]"
+          tag="[[tag]]"
+          url-fn="[[_downloadUrlFn]]"
+        ></tf-downloader>
       </div>
     </template>
   </div>
@@ -216,6 +204,12 @@ limitations under the License.
         smoothingEnabled: Boolean,
         smoothingWeight: Number,
         tagMetadata: Object,
+        // If specified uses the given colorScale; otherwise, uses a built-in
+        // default. See _getColorScale below for more details.
+        colorScale: {
+          type: Object,
+          value: null,
+        },
         tooltipSortingMethod: String,
 
         // This function is called when data is received from the backend.
@@ -240,16 +234,33 @@ limitations under the License.
           type: Function,
           value: function() {
             return ({tag, run, experiment}) => {
-              return tf_backend.addParams(
-                  tf_backend.getRouter().pluginRoute('scalars', '/scalars'),
-                  {
+              return tf_backend.getRouter().pluginRoute(
+                  'scalars',
+                  '/scalars',
+                  new URLSearchParams({
                     tag,
                     run,
                     experiment: experiment ? experiment.id : '',
-                  });
+                  }));
             }
           },
         },
+
+        // To be provided as the `url-fn` property to `tf-downloader`.
+        _downloadUrlFn: {
+          type: Function,
+          value: function() {
+            return (tag, run) => this.getDataLoadUrl({tag, run});
+          },
+        },
+
+        // A function called to fetch the scalars data from the backend.
+        // Should receive a {tag, run, experiment} object and return
+        // a promise resolving with the fetched scalars. The default
+        // implementation of this function executes:
+        // this.requestManager.request(
+        //      this.getDataLoadUrl({tag, run, experiment})
+        requestData: Function,
 
         _getDataLoadName: {
           type: Function,
@@ -303,15 +314,13 @@ limitations under the License.
       },
       _updateDownloadLink() {
         const svgStr = this.$$('tf-line-chart-data-loader').exportAsSvgString();
-        this.$$('#svgLink').href = `data:image/svg+xml,${svgStr}`;
+        // https://github.com/tensorflow/tensorboard/pull/1446#issuecomment-436915402
+        // Firefox truncates href to some length for some reason. Using base64
+        // is okay.
+        this.$$('#svgLink').href = `data:image/svg+xml;base64,${btoa(svgStr)}`;
       },
-      _csvUrl(tag, run) {
-        return tf_backend.addParams(
-            this.getDataLoadUrl({tag, run}),
-            {format: 'csv'});
-      },
-      _jsonUrl(tag, run) {
-        return this.getDataLoadUrl({tag, run});
+      _runsFromData(data) {
+        return data.map((datum) => datum.run);
       },
       _getDataSeries() {
         return this.dataToLoad.map(d => this._getSeriesNameFromDatum(d));
@@ -327,6 +336,11 @@ limitations under the License.
             datum.run;
       },
       _getColorScale() {
+        if (this.colorScale !== null) {
+          return this.colorScale;
+        }
+        // If 'colorScale' isn't explicitly specified, use the ones
+        // defined in tf_color_scale.
         return {
           scale: (name) => {
             const [exp, run] = JSON.parse(name);
@@ -335,7 +349,7 @@ limitations under the License.
                 tf_color_scale.runsColorScale(run);
           },
         };
-      },
+      }
   });
 </script>
 </dom-module>

@@ -81,16 +81,6 @@ Polymer({
      * Whether smoothing is enabled or not. If true, smoothed lines will be
      * plotted in the chart while the unsmoothed lines will be ghosted in
      * the background.
-     *
-     * The smoothing algorithm is a simple moving average, which, given a
-     * point p and a window w, replaces p with a simple average of the
-     * points in the [p - floor(w/2), p + floor(w/2)] range.  If there
-     * aren't enough points to cover the entire window to the left, the
-     * window is reduced to fit exactly the amount of elements available.
-     * This means that the smoothed line will be less in and gradually
-     * become more smooth until the desired window is reached. However when
-     * there aren't enough points on the right, the line stops being
-     * rendered at all.
      */
     smoothingEnabled: {
       type: Boolean,
@@ -99,18 +89,12 @@ Polymer({
     },
 
     /**
-     * Weight (between 0.0 and 1.0) of the smoothing. This weight controls
-     * the window size, and a weight of 1.0 means using 50% of the entire
-     * dataset as the window, while a weight of 0.0 means using a window of
-     * 0 (and thus replacing each point with themselves).
+     * Weight (between 0.0 and 1.0) of the smoothing. A value of 0.0
+     * means very little smoothing, possibly no smoothing at all. A
+     * value of 1.0 means a whole lot of smoothing, possibly so much as
+     * to make the whole plot appear as a constant function.
      *
-     * The growth between 0.0 and 1.0 is not linear though. Because
-     * changing the window from 0% to 30% of the dataset smooths the line a
-     * lot more than changing the window from 70% to 100%, an exponential
-     * function is used instead: http://i.imgur.com/bDrhEZU.png. This
-     * function increases the size of the window slowly at the beginning
-     * and gradually speeds up the growth, but 0.0 still means a window of
-     * 0 and 1.0 still means a window of the dataset's length.
+     * Has no effect when `smoothingEnabled` is `false`.
      */
     smoothingWeight: {type: Number, value: 0.6},
 
@@ -254,7 +238,8 @@ Polymer({
 
   observers: [
     '_makeChart(xComponentsCreationMethod, xType, yValueAccessor, yScaleType, tooltipColumns, colorScale, isAttached)',
-    '_reloadFromCache(_chart)',
+    // Refer to the cache and, if available, load data of a new visible series.
+    '_reloadFromCache(_chart, _visibleSeriesCache)',
     '_smoothingChanged(smoothingEnabled, smoothingWeight, _chart)',
     '_tooltipSortingMethodChanged(tooltipSortingMethod, _chart)',
     '_outliersChanged(ignoreYOutliers, _chart)',
@@ -318,10 +303,6 @@ Polymer({
   setVisibleSeries: function(names) {
     if (_.isEqual(this._visibleSeriesCache, names)) return;
     this._visibleSeriesCache = names;
-    if (this._chart) {
-      this._chart.setVisibleSeries(names);
-      this.redraw();
-    }
   },
 
   /**
@@ -368,9 +349,9 @@ Polymer({
   /**
    * Re-renders the chart. Useful if e.g. the container size changed.
    */
-  redraw: function(clearCache: boolean) {
+  redraw: function() {
     if (this._chart) {
-      this._chart.redraw(clearCache);
+      this._chart.redraw();
     }
   },
 

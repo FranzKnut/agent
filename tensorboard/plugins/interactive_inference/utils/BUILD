@@ -6,6 +6,9 @@ py_library(
     name = "common_utils",
     srcs = ["common_utils.py"],
     srcs_version = "PY2AND3",
+    deps = [
+        "@org_tensorflow_serving_api",
+    ],
 )
 
 py_library(
@@ -14,6 +17,7 @@ py_library(
     srcs_version = "PY2AND3",
     deps = [
         ":common_utils",
+        "//tensorboard/util:tensor_util",
         "@org_tensorflow_serving_api",
     ],
 )
@@ -35,9 +39,7 @@ py_library(
     testonly = 1,
     srcs = ["test_utils.py"],
     srcs_version = "PY2AND3",
-    deps = [
-        "//tensorboard:expect_tensorflow_installed",
-    ],
+    deps = ["//tensorboard:expect_tensorflow_installed"],
 )
 
 py_test(

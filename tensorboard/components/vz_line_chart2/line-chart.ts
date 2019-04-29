@@ -31,6 +31,11 @@ enum TooltipColumnEvalType {
   DOM,
 }
 
+enum YScaleType {
+  LOG = 'log',
+  LINEAR = 'linear',
+}
+
 export type LineChartStatus = {
   smoothingEnabled: boolean
 };
@@ -60,7 +65,7 @@ export class LineChart {
 
   private xAccessor: Plottable.IAccessor<number|Date>;
   private xScale: Plottable.QuantitativeScale<number|Date>;
-  private yScale: Plottable.QuantitativeScale<number>;
+  private yScale: ITfScale;
   private gridlines: Plottable.Components.Gridlines;
   private center: Plottable.Components.Group;
   private xAxis: Plottable.Axes.Numeric|Plottable.Axes.Time;
@@ -93,6 +98,9 @@ export class LineChart {
   private tooltipSortingMethod: string;
   private _ignoreYOutliers: boolean;
   private _lastMousePosition: Plottable.Point;
+  private _lastDrawBBox: DOMRect;
+  private _redrawRaf: number;
+  private _invalidateLayoutRaf: number;
 
   // An optional list of 2 numbers.
   private _defaultXRange: number[];
@@ -163,6 +171,9 @@ export class LineChart {
       this.xAxis.formatter(xAxisFormatter);
     }
     this.yScale = LineChart.getYScaleFromType(yScaleType);
+    this.yScale.setValueProviderForDomain(
+        () => this.getValuesForYAxisDomainCompute());
+
     this.yAxis = new Plottable.Axes.Numeric(this.yScale, 'left');
     let yFormatter = vz_chart_helpers.multiscaleFormatter(
         vz_chart_helpers.Y_AXIS_FORMATTER_PRECISION);
@@ -186,8 +197,11 @@ export class LineChart {
     this.gridlines =
         new Plottable.Components.Gridlines(this.xScale, this.yScale);
 
-    let xZeroLine = new Plottable.Components.GuideLineLayer('horizontal');
-    xZeroLine.scale(this.yScale).value(0);
+    let xZeroLine = null;
+    if (yScaleType !== YScaleType.LOG) {
+      xZeroLine = new Plottable.Components.GuideLineLayer('horizontal');
+      xZeroLine.scale(this.yScale).value(0);
+    }
     let yZeroLine = new Plottable.Components.GuideLineLayer('vertical');
     yZeroLine.scale(this.xScale).value(0);
 
@@ -299,8 +313,18 @@ export class LineChart {
     if (ignoreYOutliers !== this._ignoreYOutliers) {
       this._ignoreYOutliers = ignoreYOutliers;
       this.updateSpecialDatasets();
+      this.yScale.ignoreOutlier(ignoreYOutliers);
       this.resetYDomain();
     }
+  }
+
+  private getValuesForYAxisDomainCompute(): number[] {
+    const accessors = this.getAccessorsForComputingYRange();
+    let datasetToValues: (d: Plottable.Dataset) => number[][] = (d) => {
+      return accessors.map(accessor => d.data().map(x => accessor(x, -1, d)));
+    };
+    return _.flattenDeep<number>(this.datasets.map(datasetToValues))
+        .filter(isFinite);
   }
 
   /** Constructs special datasets. Each special dataset contains exceptional
@@ -388,21 +412,19 @@ export class LineChart {
   }
 
   private resetYDomain() {
-    let yDomain;
     if (this._defaultYRange != null) {
       // Use the range specified by the caller.
-      yDomain = this._defaultYRange;
+      this.yScale.domain(this._defaultYRange);
     } else {
-      // Generate a reasonable range.
-      const accessors = this.getAccessorsForComputingYRange();
-      let datasetToValues: (d: Plottable.Dataset) => number[][] = (d) => {
-        return accessors.map(accessor => d.data().map(x => accessor(x, -1, d)));
-      };
-      const vals = _.flattenDeep<number>(this.datasets.map(datasetToValues))
-          .filter(isFinite);
-      yDomain = vz_chart_helpers.computeDomain(vals, this._ignoreYOutliers);
+      // TfScale has all the logics for scaling and we manually trigger it with
+      // `autoDomain`. However, this enables the autoDomain mode which updates
+      // the domain on any dataset change and this is not desirably especially
+      // when a run is not finished yet; we don't want the graph to change in
+      // scale while user is inspecting the graph. By setting the `domain`
+      // explicitly, we can turn the feature off.
+      this.yScale.autoDomain();
+      this.yScale.domain(this.yScale.domain());
     }
-    this.yScale.domain(yDomain);
   }
 
   private getAccessorsForComputingYRange(): Plottable.IAccessor<number>[] {
@@ -685,9 +707,13 @@ export class LineChart {
     // frequency components of the time-series.
     let last = data.length > 0 ? 0 : NaN;
     let numAccum = 0;
+
+    const yValues = data.map((d, i) => this.yValueAccessor(d, i, dataset));
+    // See #786.
+    const isConstant = yValues.every((v) => v == yValues[0]);
     data.forEach((d, i) => {
-      let nextVal = this.yValueAccessor(d, i, dataset);
-      if (!_.isFinite(nextVal)) {
+      const nextVal = yValues[i];
+      if (isConstant || !Number.isFinite(nextVal)) {
         d.smoothed = nextVal;
       } else {
         last = last * smoothingWeight + (1 - smoothingWeight) * nextVal;
@@ -721,12 +747,11 @@ export class LineChart {
     return this.name2datasets[name];
   }
 
-  static getYScaleFromType(yScaleType: string):
-      Plottable.QuantitativeScale<number> {
-    if (yScaleType === 'log') {
-      return new Plottable.Scales.ModifiedLog();
-    } else if (yScaleType === 'linear') {
-      return new Plottable.Scales.Linear();
+  static getYScaleFromType(yScaleType: string): ITfScale {
+    if (yScaleType === YScaleType.LOG) {
+      return new LogScale();
+    } else if (yScaleType === YScaleType.LINEAR) {
+      return new LinearScale();
     } else {
       throw new Error('Unrecognized yScale type ' + yScaleType);
     }
@@ -781,6 +806,7 @@ export class LineChart {
    */
   public setSeriesData(name: string, data: vz_chart_helpers.ScalarDatum[]) {
     this.getDataset(name).data(data);
+    this.measureBBoxAndMaybeInvalidateLayoutInRaf();
   }
 
   /**
@@ -844,17 +870,45 @@ export class LineChart {
       // Start with that range.
       this.resetYDomain();
     }
+
+    this.measureBBoxAndMaybeInvalidateLayoutInRaf();
   }
 
-  public redraw(clearCache: boolean = false) {
-    if (clearCache) {
-      this.outer.invalidateCache();
+  public redraw() {
+    window.cancelAnimationFrame(this._redrawRaf);
+    this._redrawRaf = window.requestAnimationFrame(() => {
+      this.measureBBoxAndMaybeInvalidateLayout();
+      this.outer.redraw();
+    });
+  }
+
+  private measureBBoxAndMaybeInvalidateLayoutInRaf() {
+    window.cancelAnimationFrame(this._invalidateLayoutRaf);
+    this._invalidateLayoutRaf = window.requestAnimationFrame(() => {
+      this.measureBBoxAndMaybeInvalidateLayout();
+    });
+  }
+
+  /**
+   * Measures bounding box of the anchor node and determines whether the layout
+   * needs to be re-done with measurement cache invalidated. Plottable improved
+   * performance of rendering by caching expensive DOM measurement but this
+   * cache can be poisoned in case the anchor node is in a wrong state -- namely
+   * `display: none` where all dimensions are 0.
+   */
+  private measureBBoxAndMaybeInvalidateLayout() {
+    if (this._lastDrawBBox) {
+      const {width: prevWidth} = this._lastDrawBBox;
+      const {width} = this.targetSVG.node().getBoundingClientRect();
+      if (prevWidth == 0 && prevWidth < width) this.outer.invalidateCache();
     }
-    this.outer.redraw();
+    this._lastDrawBBox = this.targetSVG.node().getBoundingClientRect();
   }
 
   public destroy() {
     // Destroying outer destroys all subcomponents recursively.
+    window.cancelAnimationFrame(this._redrawRaf);
+    window.cancelAnimationFrame(this._invalidateLayoutRaf);
     if (this.outer) this.outer.destroy();
   }
 

@@ -20,25 +20,30 @@ from __future__ import print_function
 
 import os
 import sys
-if sys.version_info.major == 2:
-  import mock  # pylint: disable=g-import-not-at-top,unused-import
-else:
-  from unittest import mock  # pylint: disable=g-import-not-at-top
+
 import numpy as np
 import tensorflow as tf
+
+try:
+  # python version >= 3.3
+  from unittest import mock  # pylint: disable=g-import-not-at-top
+except ImportError:
+  import mock  # pylint: disable=g-import-not-at-top,unused-import
+
+from tensorflow_serving.apis import classification_pb2
+from tensorflow_serving.apis import predict_pb2
+from tensorflow_serving.apis import regression_pb2
 
 from tensorboard.plugins.interactive_inference.utils import common_utils
 from tensorboard.plugins.interactive_inference.utils import inference_utils
 from tensorboard.plugins.interactive_inference.utils import platform_utils
 from tensorboard.plugins.interactive_inference.utils import test_utils
-from tensorflow_serving.apis import classification_pb2
-from tensorflow_serving.apis import regression_pb2
 
 
 class InferenceUtilsTest(tf.test.TestCase):
 
   def setUp(self):
-    self.logdir = tf.test.get_temp_dir()
+    self.logdir = tf.compat.v1.test.get_temp_dir()
     self.examples_path = os.path.join(self.logdir, 'example.pb')
 
   def tearDown(self):
@@ -77,7 +82,7 @@ class InferenceUtilsTest(tf.test.TestCase):
     self.assertEqual(1, original_feature.length)
 
   def test_example_protos_from_path_get_all_in_file(self):
-    cns_path = os.path.join(tf.test.get_temp_dir(),
+    cns_path = os.path.join(tf.compat.v1.test.get_temp_dir(),
                             'dummy_example')
     example = test_utils.make_fake_example()
     test_utils.write_out_examples([example], cns_path)
@@ -86,7 +91,7 @@ class InferenceUtilsTest(tf.test.TestCase):
     self.assertEqual(example, dummy_examples[0])
 
   def test_example_protos_from_path_get_two(self):
-    cns_path = os.path.join(tf.test.get_temp_dir(),
+    cns_path = os.path.join(tf.compat.v1.test.get_temp_dir(),
                             'dummy_example')
     example_one = test_utils.make_fake_example(1)
     example_two = test_utils.make_fake_example(2)
@@ -99,23 +104,23 @@ class InferenceUtilsTest(tf.test.TestCase):
     self.assertEqual(example_two, dummy_examples[1])
 
   def test_example_protos_from_path_use_wildcard(self):
-    cns_path = os.path.join(tf.test.get_temp_dir(),
+    cns_path = os.path.join(tf.compat.v1.test.get_temp_dir(),
                             'wildcard_example1')
     example1 = test_utils.make_fake_example(1)
     test_utils.write_out_examples([example1], cns_path)
-    cns_path = os.path.join(tf.test.get_temp_dir(),
+    cns_path = os.path.join(tf.compat.v1.test.get_temp_dir(),
                             'wildcard_example2')
     example2 = test_utils.make_fake_example(2)
     test_utils.write_out_examples([example2], cns_path)
 
-    wildcard_path = os.path.join(tf.test.get_temp_dir(),
+    wildcard_path = os.path.join(tf.compat.v1.test.get_temp_dir(),
                                 'wildcard_example*')
     dummy_examples = platform_utils.example_protos_from_path(
         wildcard_path)
     self.assertEqual(2, len(dummy_examples))
 
   def test_example_proto_from_path_if_does_not_exist(self):
-    cns_path = os.path.join(tf.test.get_temp_dir(), 'does_not_exist')
+    cns_path = os.path.join(tf.compat.v1.test.get_temp_dir(), 'does_not_exist')
     with self.assertRaises(common_utils.InvalidUserInputError):
       platform_utils.example_protos_from_path(cns_path)
 
@@ -217,8 +222,8 @@ class InferenceUtilsTest(tf.test.TestCase):
   def test_mutant_charts_for_feature(self, mock_call_servo,
                                      mock_make_json_formatted_for_single_chart):
     example = self.make_and_write_fake_example()
-    serving_bundle = inference_utils.ServingBundle('', '', 'classification',
-                                                   '', '')
+    serving_bundles = [inference_utils.ServingBundle('', '', 'classification',
+                                                   '', '', False, '', '')]
     num_mutants = 10
     viz_params = inference_utils.VizParams(
         x_min=1,
@@ -230,19 +235,19 @@ class InferenceUtilsTest(tf.test.TestCase):
     mock_call_servo = lambda _, __: None
     mock_make_json_formatted_for_single_chart = lambda _, __: {}
     charts = inference_utils.mutant_charts_for_feature(
-        example, 'repeated_float', serving_bundle, viz_params)
+        [example], 'repeated_float', serving_bundles, viz_params)
     self.assertEqual('numeric', charts['chartType'])
     self.assertEqual(4, len(charts['data']))
     charts = inference_utils.mutant_charts_for_feature(
-        example, 'repeated_int', serving_bundle, viz_params)
+        [example], 'repeated_int', serving_bundles, viz_params)
     self.assertEqual('numeric', charts['chartType'])
     self.assertEqual(2, len(charts['data']))
     charts = inference_utils.mutant_charts_for_feature(
-        example, 'single_int', serving_bundle, viz_params)
+        [example], 'single_int', serving_bundles, viz_params)
     self.assertEqual('numeric', charts['chartType'])
     self.assertEqual(1, len(charts['data']))
     charts = inference_utils.mutant_charts_for_feature(
-        example, 'non_numeric', serving_bundle, viz_params)
+        [example], 'non_numeric', serving_bundles, viz_params)
     self.assertEqual('categorical', charts['chartType'])
     self.assertEqual(3, len(charts['data']))
 
@@ -251,8 +256,8 @@ class InferenceUtilsTest(tf.test.TestCase):
   def test_mutant_charts_for_feature_with_feature_index_pattern(
       self, mock_call_servo, mock_make_json_formatted_for_single_chart):
     example = self.make_and_write_fake_example()
-    serving_bundle = inference_utils.ServingBundle('', '', 'classification',
-                                                   '', '')
+    serving_bundles = [inference_utils.ServingBundle('', '', 'classification',
+                                                   '', '', False, '', '')]
     num_mutants = 10
     viz_params = inference_utils.VizParams(
         x_min=1,
@@ -264,18 +269,21 @@ class InferenceUtilsTest(tf.test.TestCase):
     mock_call_servo = lambda _, __: None
     mock_make_json_formatted_for_single_chart = lambda _, __: {}
     charts = inference_utils.mutant_charts_for_feature(
-        example, 'repeated_float', serving_bundle, viz_params)
+        [example], 'repeated_float', serving_bundles, viz_params)
     self.assertEqual('numeric', charts['chartType'])
     self.assertEqual(3, len(charts['data']))
 
-    # These should error out because they don't have 4 fields.
-    with self.assertRaises(common_utils.InvalidUserInputError):
-      charts = inference_utils.mutant_charts_for_feature(
-          example, 'repeated_int', serving_bundle, viz_params)
+    # These should return 3 charts even though all fields from the index
+    # pattern don't exist for the example.
+    charts = inference_utils.mutant_charts_for_feature(
+        [example], 'repeated_int', serving_bundles, viz_params)
+    self.assertEqual('numeric', charts['chartType'])
+    self.assertEqual(3, len(charts['data']))
 
-    with self.assertRaises(common_utils.InvalidUserInputError):
-      charts = inference_utils.mutant_charts_for_feature(
-          example, 'single_int', serving_bundle, viz_params)
+    charts = inference_utils.mutant_charts_for_feature(
+        [example], 'single_int', serving_bundles, viz_params)
+    self.assertEqual('numeric', charts['chartType'])
+    self.assertEqual(3, len(charts['data']))
 
   def test_make_mutant_tuples_float_list(self):
     example = self.make_and_write_fake_example()
@@ -291,7 +299,7 @@ class InferenceUtilsTest(tf.test.TestCase):
     original_feature = inference_utils.parse_original_feature_from_example(
         example, 'repeated_float')
     mutant_features, mutant_examples = inference_utils.make_mutant_tuples(
-        example,
+        [example],
         original_feature,
         index_to_mutate=index_to_mutate,
         viz_params=viz_params)
@@ -318,7 +326,6 @@ class InferenceUtilsTest(tf.test.TestCase):
     example = self.make_and_write_fake_example()
     index_to_mutate = 1
     num_mutants = 10
-    num_examples_to_scan = 10
     viz_params = inference_utils.VizParams(
         x_min=1,
         x_max=10,
@@ -328,7 +335,7 @@ class InferenceUtilsTest(tf.test.TestCase):
     original_feature = inference_utils.parse_original_feature_from_example(
         example, 'repeated_int')
     mutant_features, mutant_examples = inference_utils.make_mutant_tuples(
-        example,
+        [example],
         original_feature,
         index_to_mutate=index_to_mutate,
         viz_params=viz_params)
@@ -398,6 +405,56 @@ class InferenceUtilsTest(tf.test.TestCase):
     self.assertEqual(1, len(jsonable['value']))
     self.assertEqual(20, jsonable['value'][0]['step'])
     self.assertAlmostEqual(0.45, jsonable['value'][0]['scalar'])
+
+  def test_convert_predict_response_regression(self):
+    """Test converting a PredictResponse to a RegressionResponse."""
+    predict = predict_pb2.PredictResponse()
+    output = predict.outputs['scores']
+    dim = output.tensor_shape.dim.add()
+    dim.size = 2
+    output.float_val.extend([0.1, 0.2])
+
+    bundle = inference_utils.ServingBundle(
+        '', '', 'regression', '', '', True, '', 'scores')
+    converted = common_utils.convert_predict_response(predict, bundle)
+
+    self.assertAlmostEqual(0.1, converted.result.regressions[0].value)
+    self.assertAlmostEqual(0.2, converted.result.regressions[1].value)
+
+  def test_convert_predict_response_classification(self):
+    """Test converting a PredictResponse to a ClassificationResponse."""
+    predict = predict_pb2.PredictResponse()
+    output = predict.outputs['probabilities']
+    dim = output.tensor_shape.dim.add()
+    dim.size = 3
+    dim = output.tensor_shape.dim.add()
+    dim.size = 2
+    output.float_val.extend([1., 0., .9, .1, .8, .2])
+
+    bundle = inference_utils.ServingBundle(
+        '', '', 'classification', '', '', True, '', 'probabilities')
+    converted = common_utils.convert_predict_response(predict, bundle)
+
+    self.assertEqual("0", converted.result.classifications[0].classes[0].label)
+    self.assertAlmostEqual(
+        1, converted.result.classifications[0].classes[0].score)
+    self.assertEqual("1", converted.result.classifications[0].classes[1].label)
+    self.assertAlmostEqual(
+        0, converted.result.classifications[0].classes[1].score)
+
+    self.assertEqual("0", converted.result.classifications[1].classes[0].label)
+    self.assertAlmostEqual(
+        .9, converted.result.classifications[1].classes[0].score)
+    self.assertEqual("1", converted.result.classifications[1].classes[1].label)
+    self.assertAlmostEqual(
+        .1, converted.result.classifications[1].classes[1].score)
+
+    self.assertEqual("0", converted.result.classifications[2].classes[0].label)
+    self.assertAlmostEqual(
+        .8, converted.result.classifications[2].classes[0].score)
+    self.assertEqual("1", converted.result.classifications[2].classes[1].label)
+    self.assertAlmostEqual(
+        .2, converted.result.classifications[2].classes[1].score)
 
 
 if __name__ == '__main__':
