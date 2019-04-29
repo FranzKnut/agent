@@ -60,11 +60,11 @@ Agent was built in Python within Tensorboard due to the visualization suite's ro
 
 Packages required (recommended version):
 
-Python virtual environment (3.6)
+Python virtual environment (v3.6)
 
-[Bazel](https://docs.bazel.build/versions/master/install.html) build tool from Google. Install guide in link. (0.17.2)
+[Bazel](https://docs.bazel.build/versions/master/install.html) build tool from Google. Install guide in link. (v0.21.0)
 
-Tensorflow (1.13.1)
+Tensorflow (v1.13.1)
 
 Then:
 
