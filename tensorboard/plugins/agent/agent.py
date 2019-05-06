@@ -40,7 +40,7 @@ from tensorboard.plugins.agent.visualizer import Visualizer
 
 class Agent(object):
 
-  def __init__(self, logdir):
+  def __init__(self, logdir, skip, env_name, tags, feed_ops):
     self.PLUGIN_LOGDIR = logdir + '/plugins/' + PLUGIN_NAME
     self.LOG_DIR = None
 
@@ -56,6 +56,11 @@ class Agent(object):
     self.rewards = []
     self.actions = []
     self.start_time = round(time.time())
+
+    self.skip = skip
+    self.env_name = env_name
+    self.tags = tags
+    self.feed_ops = feed_ops
 
     if not tf.gfile.Exists(self.PLUGIN_LOGDIR + '/config.pkl'):
       tf.gfile.MakeDirs(self.PLUGIN_LOGDIR)
@@ -119,7 +124,7 @@ class Agent(object):
       tf.logging.info('Finished recording')
 
 
-  def update(self, session, episode_n, action, frame=None, reward=0.0, done=False):
+  def update(self, session, n_episode, action, frame=None, reward=0.0, done=False):
     '''Updates Agent with information from a single step of the environment
     '''
     assert(session)
@@ -128,11 +133,11 @@ class Agent(object):
     new_config = self._get_config()
     record_freq = new_config['record_freq']
 
-    if episode_n % record_freq != 0 or record_freq == 0:
+    if n_episode % self.skip != 0:
       return
 
     if self.video_writer is None:
-      self._start_episode(env_name.strip(), tag.strip(), episode_n)
+      self._start_episode(self.env_name.strip(), self.tags.strip(), n_episode)
 
     final_image = self._update_frame(session, frame, new_config)
     self._update_recording(final_image, new_config)
@@ -141,7 +146,7 @@ class Agent(object):
     self.rewards.append(np.asscalar(reward))
 
     if done:
-      self._finish_episode(episode_n)
+      self._finish_episode(n_episode)
       self._freeze_model(session)
 
 
@@ -150,14 +155,16 @@ class Agent(object):
       '''
       print("Freeze model. < IMPLEMENT >")
       
-      saver.save(sess, "./tmp/model", write_meta_graph=True, global_step=1)
+      saver.save(session, "./tmp/model", write_meta_graph=True, global_step=1)
 
       with open("./tmp/" + "graph.pb", 'wb') as f:
-        f.write(sess.graph_def.SerializeToString())
-      sess.close()
+        f.write(session.graph_def.SerializeToString())
+
+      # Dont close as people may still be using the session.
+      #session.close()
 
 
-  def _start_episode(self, env_name, tag, episode_n):
+  def _start_episode(self, env_name, tag, n_episode):
       # Directory
       d=self.PLUGIN_LOGDIR
       tagString = '' if tag == ''  else  '_{}'.format(tag)
