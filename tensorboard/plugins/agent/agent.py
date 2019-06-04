@@ -132,12 +132,14 @@ class Agent(object):
 
     new_config = self._get_config()
     record_freq = new_config['record_freq']
-
+    
+    # Records the first episode and every 'skip' episodes after
+    # Consider allowing a function to be passed for custom skip behavior
     if n_episode % self.skip != 0:
       return
 
     if self.video_writer is None:
-      self._start_episode(self.env_name.strip(), self.tags.strip(), n_episode)
+      self._start_episode(self.env_name.strip(), self.tags, n_episode)
 
     final_image = self._update_frame(session, frame, new_config)
     self._update_recording(final_image, new_config)
@@ -146,6 +148,7 @@ class Agent(object):
     self.rewards.append(np.asscalar(reward))
 
     if done:
+      print("Episode completed", n_episode)
       self._finish_episode(n_episode)
       self._freeze_model(session)
 
@@ -164,11 +167,11 @@ class Agent(object):
       #session.close()
 
 
-  def _start_episode(self, env_name, tag, n_episode):
+  def _start_episode(self, env_name, tags, n_episode):
       # Directory
       d=self.PLUGIN_LOGDIR
-      tagString = '' if tag == ''  else  '_{}'.format(tag)
-      self.LOG_DIR = '{}/{}{}{}-{}-ep{}'.format(d, self.live_prefix, env_name, tag, self.start_time, str(episode_n).zfill(6) )
+      # tagString = '' if tag == ''  else  '_{}'.format(tag)
+      self.LOG_DIR = '{}/{}{}-{}-ep{}'.format(d, self.live_prefix, env_name, self.start_time, str(episode_n).zfill(6) )
 
       # TODO: Create video writer for saliency
       self.video_writer = video_writing.VideoWriter(
